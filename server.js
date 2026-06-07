@@ -31,6 +31,18 @@ const server = http.createServer(async (req, res) => {
       return serveFile(res, path.join(ROOT, "score-items.html"));
     }
 
+    if (url.pathname === "/score-transactions") {
+      return serveFile(res, path.join(ROOT, "score-transactions.html"));
+    }
+
+    if (url.pathname === "/reports/score-details") {
+      return serveFile(res, path.join(ROOT, "score-details-report.html"));
+    }
+
+    if (url.pathname === "/audit-logs") {
+      return serveFile(res, path.join(ROOT, "audit-logs.html"));
+    }
+
     if (url.pathname === "/api/students" && req.method === "GET") {
       return getStudents(res);
     }
@@ -73,6 +85,36 @@ const server = http.createServer(async (req, res) => {
 
     if (scoreItemMatch && req.method === "DELETE") {
       return deleteScoreItem(res, scoreItemMatch[1]);
+    }
+
+    if (url.pathname === "/api/score-transactions" && req.method === "GET") {
+      return getScoreTransactions(res, url.searchParams);
+    }
+
+    if (url.pathname === "/api/score-transactions" && req.method === "POST") {
+      return createScoreTransaction(req, res);
+    }
+
+    const transactionAuditMatch = url.pathname.match(/^\/api\/score-transactions\/([^/]+)\/audit-logs$/);
+    if (transactionAuditMatch && req.method === "GET") {
+      return getAuditLogs(res, "ScoreTransaction", transactionAuditMatch[1]);
+    }
+
+    const transactionMatch = url.pathname.match(/^\/api\/score-transactions\/([^/]+)$/);
+    if (transactionMatch && req.method === "PUT") {
+      return updateScoreTransaction(req, res, transactionMatch[1]);
+    }
+
+    if (transactionMatch && req.method === "DELETE") {
+      return deleteScoreTransaction(res, transactionMatch[1]);
+    }
+
+    if (url.pathname === "/api/reports/score-details" && req.method === "GET") {
+      return getScoreDetailsReport(res, url.searchParams);
+    }
+
+    if (url.pathname === "/api/audit-logs" && req.method === "GET") {
+      return getAuditLogSearch(res, url.searchParams);
     }
 
     return serveStatic(req, res, url.pathname);
@@ -251,9 +293,208 @@ async function deleteScoreItem(res, id) {
   return sendJson(res, 200, deleted);
 }
 
+async function getScoreTransactions(res, searchParams) {
+  const where = { isDeleted: false };
+  const studentId = searchParams.get("studentId");
+  const dateFrom = searchParams.get("dateFrom");
+  const dateTo = searchParams.get("dateTo");
+
+  if (studentId) {
+    where.studentId = studentId;
+  }
+
+  if (dateFrom || dateTo) {
+    where.transactionDate = {};
+    if (dateFrom) {
+      where.transactionDate.gte = startOfDay(dateFrom);
+    }
+    if (dateTo) {
+      where.transactionDate.lte = endOfDay(dateTo);
+    }
+  }
+
+  const transactions = await prisma.scoreTransaction.findMany({
+    where,
+    include: {
+      student: true,
+      scoreItem: true,
+    },
+    orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }],
+  });
+
+  return sendJson(res, 200, transactions);
+}
+
+async function getScoreDetailsReport(res, searchParams) {
+  const where = {
+    isDeleted: false,
+    student: { isDeleted: false },
+    scoreItem: { isDeleted: false },
+  };
+  const studentId = searchParams.get("studentId");
+  const type = searchParams.get("type");
+  const dateFrom = searchParams.get("dateFrom");
+  const dateTo = searchParams.get("dateTo");
+  const scoreItemIds = searchParams.getAll("scoreItemId").filter(Boolean);
+
+  if (studentId) {
+    where.studentId = studentId;
+  }
+
+  if (type === "REWARD" || type === "PENALTY") {
+    where.type = type;
+  }
+
+  if (scoreItemIds.length) {
+    where.scoreItemId = { in: scoreItemIds };
+  }
+
+  if (dateFrom || dateTo) {
+    where.transactionDate = {};
+    if (dateFrom) {
+      where.transactionDate.gte = startOfDay(dateFrom);
+    }
+    if (dateTo) {
+      where.transactionDate.lte = endOfDay(dateTo);
+    }
+  }
+
+  const rows = await prisma.scoreTransaction.findMany({
+    where,
+    include: {
+      student: true,
+      scoreItem: true,
+    },
+    orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }],
+  });
+
+  return sendJson(res, 200, rows);
+}
+
+async function createScoreTransaction(req, res) {
+  const data = await readJson(req);
+  const prepared = await prepareScoreTransactionInput(data);
+
+  if (!prepared.valid) {
+    return sendJson(res, 400, { message: prepared.message });
+  }
+
+  const transaction = await prisma.$transaction(async (tx) => {
+    const created = await tx.scoreTransaction.create({
+      data: prepared.data,
+    });
+
+    await recalculateStudentScore(tx, created.studentId);
+    const next = await getScoreTransactionById(tx, created.id);
+    await createAuditLog(tx, "ScoreTransaction", created.id, "CREATE", null, next);
+    return next;
+  });
+
+  return sendJson(res, 201, transaction);
+}
+
+async function updateScoreTransaction(req, res, id) {
+  const data = await readJson(req);
+  const existing = await prisma.scoreTransaction.findFirst({
+    where: { id, isDeleted: false },
+    include: { student: true, scoreItem: true },
+  });
+
+  if (!existing) {
+    return sendJson(res, 404, { message: "Score transaction not found" });
+  }
+
+  const prepared = await prepareScoreTransactionInput(data);
+
+  if (!prepared.valid) {
+    return sendJson(res, 400, { message: prepared.message });
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.scoreTransaction.update({
+      where: { id },
+      data: prepared.data,
+    });
+
+    await recalculateStudentScore(tx, existing.studentId);
+    if (existing.studentId !== prepared.data.studentId) {
+      await recalculateStudentScore(tx, prepared.data.studentId);
+    }
+
+    const next = await getScoreTransactionById(tx, id);
+    await createAuditLog(tx, "ScoreTransaction", id, "UPDATE", existing, next);
+    return next;
+  });
+
+  return sendJson(res, 200, updated);
+}
+
+async function deleteScoreTransaction(res, id) {
+  const existing = await prisma.scoreTransaction.findFirst({
+    where: { id, isDeleted: false },
+    include: { student: true, scoreItem: true },
+  });
+
+  if (!existing) {
+    return sendJson(res, 404, { message: "Score transaction not found" });
+  }
+
+  const deleted = await prisma.$transaction(async (tx) => {
+    await tx.scoreTransaction.update({
+      where: { id },
+      data: { isDeleted: true },
+    });
+
+    await recalculateStudentScore(tx, existing.studentId);
+    const next = await getScoreTransactionById(tx, id);
+    await createAuditLog(tx, "ScoreTransaction", id, "DELETE", existing, next);
+    return next;
+  });
+
+  return sendJson(res, 200, deleted);
+}
+
 async function getAuditLogs(res, tableName, recordId) {
   const logs = await prisma.auditLog.findMany({
     where: { tableName, recordId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return sendJson(res, 200, logs);
+}
+
+async function getAuditLogSearch(res, searchParams) {
+  const where = {};
+  const tableName = searchParams.get("tableName");
+  const action = searchParams.get("action");
+  const recordId = searchParams.get("recordId");
+  const dateFrom = searchParams.get("dateFrom");
+  const dateTo = searchParams.get("dateTo");
+
+  if (tableName) {
+    where.tableName = tableName;
+  }
+
+  if (action === "CREATE" || action === "UPDATE" || action === "DELETE") {
+    where.action = action;
+  }
+
+  if (recordId) {
+    where.recordId = recordId;
+  }
+
+  if (dateFrom || dateTo) {
+    where.createdAt = {};
+    if (dateFrom) {
+      where.createdAt.gte = startOfDay(dateFrom);
+    }
+    if (dateTo) {
+      where.createdAt.lte = endOfDay(dateTo);
+    }
+  }
+
+  const logs = await prisma.auditLog.findMany({
+    where,
     orderBy: { createdAt: "desc" },
   });
 
@@ -268,6 +509,111 @@ async function createAuditLog(tx, tableName, recordId, action, oldValue, newValu
       action,
       oldValue: oldValue ? toAuditValue(oldValue) : null,
       newValue: newValue ? toAuditValue(newValue) : null,
+    },
+  });
+}
+
+async function prepareScoreTransactionInput(data) {
+  if (!data || typeof data !== "object") {
+    return { valid: false, message: "Score transaction data is required" };
+  }
+
+  if (!data.studentId) {
+    return { valid: false, message: "Student is required" };
+  }
+
+  if (data.type !== "REWARD" && data.type !== "PENALTY") {
+    return { valid: false, message: "Type must be REWARD or PENALTY" };
+  }
+
+  if (!data.scoreItemId) {
+    return { valid: false, message: "Score item is required" };
+  }
+
+  const student = await prisma.student.findFirst({
+    where: { id: data.studentId, isDeleted: false },
+  });
+  if (!student) {
+    return { valid: false, message: "Student not found" };
+  }
+
+  const scoreItem = await prisma.scoreItem.findFirst({
+    where: { id: data.scoreItemId, isDeleted: false },
+  });
+  if (!scoreItem) {
+    return { valid: false, message: "Score item not found" };
+  }
+
+  if (scoreItem.type !== data.type) {
+    return { valid: false, message: "Score item type does not match transaction type" };
+  }
+
+  const rawScoreChange = Number(data.scoreChange || scoreItem.score);
+  if (!Number.isInteger(rawScoreChange) || rawScoreChange === 0) {
+    return { valid: false, message: "Score change must be a non-zero integer" };
+  }
+
+  const transactionDate = data.transactionDate ? new Date(data.transactionDate) : new Date();
+  if (Number.isNaN(transactionDate.getTime())) {
+    return { valid: false, message: "Transaction date is invalid" };
+  }
+
+  const normalizedScoreChange = data.type === "PENALTY"
+    ? -Math.abs(rawScoreChange)
+    : Math.abs(rawScoreChange);
+
+  return {
+    valid: true,
+    data: {
+      studentId: data.studentId,
+      scoreItemId: data.scoreItemId,
+      type: data.type,
+      scoreChange: normalizedScoreChange,
+      runningTotalScore: 0,
+      transactionDate,
+    },
+  };
+}
+
+async function recalculateStudentScore(tx, studentId) {
+  const transactions = await tx.scoreTransaction.findMany({
+    where: {
+      studentId,
+      isDeleted: false,
+    },
+    orderBy: [{ transactionDate: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+  });
+
+  let runningTotal = 0;
+  let lastTransactionAt = null;
+
+  for (const transaction of transactions) {
+    runningTotal += transaction.scoreChange;
+    lastTransactionAt = transaction.transactionDate;
+
+    if (transaction.runningTotalScore !== runningTotal) {
+      await tx.scoreTransaction.update({
+        where: { id: transaction.id },
+        data: { runningTotalScore: runningTotal },
+      });
+    }
+  }
+
+  await tx.student.update({
+    where: { id: studentId },
+    data: {
+      currentScore: runningTotal,
+      lastTransactionAt,
+    },
+  });
+}
+
+async function getScoreTransactionById(tx, id) {
+  return tx.scoreTransaction.findUnique({
+    where: { id },
+    include: {
+      student: true,
+      scoreItem: true,
     },
   });
 }
@@ -364,6 +710,18 @@ function isValidUrl(value) {
   } catch {
     return false;
   }
+}
+
+function startOfDay(value) {
+  const date = new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function endOfDay(value) {
+  const date = new Date(value);
+  date.setHours(23, 59, 59, 999);
+  return date;
 }
 
 function toAuditValue(value) {
