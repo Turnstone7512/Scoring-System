@@ -1,23 +1,25 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>分數異動作業</title>
+    <title>??啣?雿平</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="score-transactions.css" />
   </head>
   <body class="theme-score-transactions">
     <header class="app-header">
       <div>
-        <h1>分數異動作業</h1>
-        <p>新增、查詢與維護學生加減分紀錄。</p>
+        <h1>??啣?雿平</h1>
+        <p>?啣??閰Ｚ?蝬剛風摮貊???????/p>
       </div>
       <div class="header-actions">
-        <a class="secondary-link" href="/">回計點系統</a>
-        <a class="secondary-link" href="/students">學生管理</a>
-        <a class="secondary-link" href="/score-items">加減分項目</a>
-        <a class="secondary-link" href="/reports/score-details">分數明細報表</a>
+        <a class="secondary-link" href="/">??暺頂蝯?/a>
+        <a class="secondary-link" href="/students">摮貊?蝞∠?</a>
+        <a class="secondary-link" href="/score-items">??????/a>
+        <a class="secondary-link" href="/reports/score-details">??敦?梯”</a>
+        <a class="secondary-link" href="/audit-logs">?啣?甇瑞?</a>
+        <a class="secondary-link" href="/user-accounts">使用者帳號</a>
       </div>
     </header>
 
@@ -25,29 +27,27 @@
       <section class="panel">
         <div class="section-title">
           <div>
-            <h2>查詢資料</h2>
-            <p id="transactionCount" class="meta">載入中</p>
+            <h2>?亥岷鞈?</h2>
+            <p id="transactionCount" class="meta">頛銝?/p>
           </div>
         </div>
 
         <form id="searchForm" class="search-grid">
           <label>
-            學生
+            摮貊?
             <select id="searchStudentId">
-              <option value="">全部學生</option>
+              <option value="">?券摮貊?</option>
             </select>
           </label>
           <label>
-            日期起
-            <input id="dateFrom" type="date" />
+            ?交?韏?            <input id="dateFrom" type="date" />
           </label>
           <label>
-            日期訖
-            <input id="dateTo" type="date" />
+            ?交?閮?            <input id="dateTo" type="date" />
           </label>
           <div class="form-actions align-end">
-            <button type="submit">查詢</button>
-            <button id="resetSearchButton" class="secondary-button" type="button">清除</button>
+            <button type="submit">?亥岷</button>
+            <button id="resetSearchButton" class="secondary-button" type="button">皜</button>
           </div>
         </form>
 
@@ -55,59 +55,59 @@
           <table class="transaction-table">
             <thead>
               <tr>
-                <th>學生</th>
-                <th>日期</th>
-                <th>加分 / 減分</th>
-                <th>主項-子項</th>
-                <th>分數</th>
-                <th>異動後總分</th>
-                <th>操作</th>
+                <th>摮貊?</th>
+                <th>?交?</th>
+                <th>?? / 皜?</th>
+                <th>銝駁?-摮?</th>
+                <th>?</th>
+                <th>?啣?敺蜇??/th>
+                <th>??</th>
               </tr>
             </thead>
             <tbody id="transactionsTableBody"></tbody>
           </table>
-          <div id="emptyTransactions" class="empty-state hidden">目前沒有分數異動資料</div>
+          <div id="emptyTransactions" class="empty-state hidden">?桀?瘝???啣?鞈?</div>
         </div>
       </section>
 
       <section class="panel">
         <div class="section-title">
           <div>
-            <h2 id="transactionFormTitle">新增分數異動</h2>
-            <p class="meta">選擇項目後會自動帶出分數。</p>
+            <h2 id="transactionFormTitle">?啣???啣?</h2>
+            <p class="meta">?豢??敺??芸?撣嗅???/p>
           </div>
-          <button id="cancelEditButton" class="secondary-button hidden" type="button">取消修改</button>
+          <button id="cancelEditButton" class="secondary-button hidden" type="button">??靽格</button>
         </div>
 
         <form id="transactionForm" class="transaction-form">
           <input id="transactionId" type="hidden" />
           <label>
-            學生
+            摮貊?
             <select id="studentId" required></select>
           </label>
           <label>
-            加分 / 減分
+            ?? / 皜?
             <select id="type" required>
-              <option value="REWARD">加分</option>
-              <option value="PENALTY">減分</option>
+              <option value="REWARD">??</option>
+              <option value="PENALTY">皜?</option>
             </select>
           </label>
           <label>
-            主項-子項
+            銝駁?-摮?
             <select id="scoreItemId" required></select>
           </label>
           <label>
-            分數
+            ?
             <input id="scoreChange" type="number" min="1" step="1" required />
           </label>
           <label>
-            異動日期
+            ?啣??交?
             <input id="transactionDate" type="datetime-local" required />
           </label>
-          <p class="meta">減分可輸入正數，儲存時會自動轉成負數。</p>
+          <p class="meta">皜??航撓?交迤?賂??脣????芸?頧?鞎??/p>
           <p id="formError" class="error-text hidden"></p>
           <div class="form-actions">
-            <button type="submit">儲存異動</button>
+            <button type="submit">?脣??啣?</button>
           </div>
         </form>
       </section>
@@ -116,13 +116,15 @@
     <dialog id="historyDialog" class="modal">
       <section class="entry-form modal-form">
         <div class="modal-title">
-          <h2>分數異動歷程</h2>
-          <button id="closeHistoryDialog" class="secondary-button icon-button" type="button" aria-label="關閉">×</button>
+          <h2>??啣?甇瑞?</h2>
+          <button id="closeHistoryDialog" class="secondary-button icon-button" type="button" aria-label="??">?</button>
         </div>
         <div id="historyContent" class="history-list"></div>
       </section>
     </dialog>
 
+    <script src="ui-utils.js"></script>
     <script src="score-transactions.js"></script>
   </body>
 </html>
+

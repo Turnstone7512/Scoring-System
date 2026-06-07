@@ -18,6 +18,11 @@ enum AuditAction {
   DELETE
 }
 
+enum UserRole {
+  ADMIN
+  VIEWER
+}
+
 model Student {
   id                String             @id @default(cuid())
   name              String
@@ -40,7 +45,7 @@ model ScoreItem {
   id           String             @id @default(cuid())
   type         ScoreItemType
   mainCategory String
-  subCategory  String?
+  subCategory  String
   imageUrl     String?
   score        Int
   isDeleted    Boolean            @default(false)
@@ -85,4 +90,17 @@ model AuditLog {
   @@index([tableName, recordId])
   @@index([action])
   @@index([createdAt])
+}
+
+model UserAccount {
+  id        String   @id @default(cuid())
+  account   String   @unique
+  name      String
+  role      UserRole
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([isDeleted])
 }

@@ -43,6 +43,10 @@ const server = http.createServer(async (req, res) => {
       return serveFile(res, path.join(ROOT, "audit-logs.html"));
     }
 
+    if (url.pathname === "/user-accounts") {
+      return serveFile(res, path.join(ROOT, "user-accounts.html"));
+    }
+
     if (url.pathname === "/api/students" && req.method === "GET") {
       return getStudents(res);
     }
@@ -117,6 +121,27 @@ const server = http.createServer(async (req, res) => {
       return getAuditLogSearch(res, url.searchParams);
     }
 
+    if (url.pathname === "/api/user-accounts" && req.method === "GET") {
+      return getUserAccounts(res);
+    }
+
+    if (url.pathname === "/api/user-accounts" && req.method === "POST") {
+      return createUserAccount(req, res);
+    }
+
+    const userAccountMatch = url.pathname.match(/^\/api\/user-accounts\/([^/]+)$/);
+    if (userAccountMatch && req.method === "PUT") {
+      return updateUserAccount(req, res, userAccountMatch[1]);
+    }
+
+    if (userAccountMatch && req.method === "DELETE") {
+      return deleteUserAccount(res, userAccountMatch[1]);
+    }
+
+    if (url.pathname === "/api/reports/monthly-scores" && req.method === "GET") {
+      return getMonthlyScores(res);
+    }
+
     return serveStatic(req, res, url.pathname);
   } catch (error) {
     console.error(error);
@@ -135,6 +160,83 @@ async function getStudents(res) {
   });
 
   return sendJson(res, 200, students);
+}
+
+async function getUserAccounts(res) {
+  const accounts = await prisma.userAccount.findMany({
+    where: { isDeleted: false },
+    orderBy: [{ role: "asc" }, { account: "asc" }],
+  });
+
+  return sendJson(res, 200, accounts);
+}
+
+async function createUserAccount(req, res) {
+  const data = await readJson(req);
+  const validation = validateUserAccount(data);
+
+  if (!validation.valid) {
+    return sendJson(res, 400, { message: validation.message });
+  }
+
+  const account = await prisma.$transaction(async (tx) => {
+    const created = await tx.userAccount.create({
+      data: normalizeUserAccountInput(data),
+    });
+    await createAuditLog(tx, "UserAccount", created.id, "CREATE", null, created);
+    return created;
+  });
+
+  return sendJson(res, 201, account);
+}
+
+async function updateUserAccount(req, res, id) {
+  const data = await readJson(req);
+  const validation = validateUserAccount(data);
+
+  if (!validation.valid) {
+    return sendJson(res, 400, { message: validation.message });
+  }
+
+  const existing = await prisma.userAccount.findFirst({
+    where: { id, isDeleted: false },
+  });
+
+  if (!existing) {
+    return sendJson(res, 404, { message: "User account not found" });
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const next = await tx.userAccount.update({
+      where: { id },
+      data: normalizeUserAccountInput(data),
+    });
+    await createAuditLog(tx, "UserAccount", id, "UPDATE", existing, next);
+    return next;
+  });
+
+  return sendJson(res, 200, updated);
+}
+
+async function deleteUserAccount(res, id) {
+  const existing = await prisma.userAccount.findFirst({
+    where: { id, isDeleted: false },
+  });
+
+  if (!existing) {
+    return sendJson(res, 404, { message: "User account not found" });
+  }
+
+  const deleted = await prisma.$transaction(async (tx) => {
+    const next = await tx.userAccount.update({
+      where: { id },
+      data: { isDeleted: true },
+    });
+    await createAuditLog(tx, "UserAccount", id, "DELETE", existing, next);
+    return next;
+  });
+
+  return sendJson(res, 200, deleted);
 }
 
 async function createStudent(req, res) {
@@ -294,7 +396,10 @@ async function deleteScoreItem(res, id) {
 }
 
 async function getScoreTransactions(res, searchParams) {
-  const where = { isDeleted: false };
+  const where = {
+    isDeleted: false,
+    student: { isDeleted: false },
+  };
   const studentId = searchParams.get("studentId");
   const dateFrom = searchParams.get("dateFrom");
   const dateTo = searchParams.get("dateTo");
@@ -329,7 +434,6 @@ async function getScoreDetailsReport(res, searchParams) {
   const where = {
     isDeleted: false,
     student: { isDeleted: false },
-    scoreItem: { isDeleted: false },
   };
   const studentId = searchParams.get("studentId");
   const type = searchParams.get("type");
@@ -368,6 +472,30 @@ async function getScoreDetailsReport(res, searchParams) {
     orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }],
   });
 
+  return sendJson(res, 200, rows);
+}
+
+async function getMonthlyScores(res) {
+  const transactions = await prisma.scoreTransaction.findMany({
+    where: {
+      isDeleted: false,
+      student: { isDeleted: false },
+    },
+    select: {
+      transactionDate: true,
+      scoreChange: true,
+    },
+    orderBy: [{ transactionDate: "asc" }, { createdAt: "asc" }],
+  });
+
+  const monthly = new Map();
+  for (const transaction of transactions) {
+    const date = new Date(transaction.transactionDate);
+    const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    monthly.set(month, (monthly.get(month) || 0) + transaction.scoreChange);
+  }
+
+  const rows = Array.from(monthly.entries()).map(([month, score]) => ({ month, score }));
   return sendJson(res, 200, rows);
 }
 
@@ -643,6 +771,26 @@ function validateStudent(data) {
   return { valid: true };
 }
 
+function validateUserAccount(data) {
+  if (!data || typeof data !== "object") {
+    return { valid: false, message: "User account data is required" };
+  }
+
+  if (!String(data.account || "").trim()) {
+    return { valid: false, message: "Account is required" };
+  }
+
+  if (!String(data.name || "").trim()) {
+    return { valid: false, message: "Name is required" };
+  }
+
+  if (data.role !== "ADMIN" && data.role !== "VIEWER") {
+    return { valid: false, message: "Role must be ADMIN or VIEWER" };
+  }
+
+  return { valid: true };
+}
+
 function validateScoreItem(data) {
   if (!data || typeof data !== "object") {
     return { valid: false, message: "Score item data is required" };
@@ -683,6 +831,14 @@ function normalizeStudentInput(data) {
     classNo: emptyToNull(data.classNo),
     email: emptyToNull(data.email),
     photoUrl: emptyToNull(data.photoUrl),
+  };
+}
+
+function normalizeUserAccountInput(data) {
+  return {
+    account: String(data.account).trim(),
+    name: String(data.name).trim(),
+    role: data.role,
   };
 }
 

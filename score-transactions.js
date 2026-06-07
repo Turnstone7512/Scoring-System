@@ -25,6 +25,11 @@ const fields = {
 let students = [];
 let scoreItems = [];
 let transactions = [];
+let transactionSearchTerm = "";
+let currentPage = 1;
+const pageSize = 10;
+
+insertTransactionControls();
 
 searchForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -60,6 +65,7 @@ async function loadScoreItems() {
 }
 
 async function loadTransactions() {
+  AppUI.showLoading("載入分數異動");
   try {
     const params = new URLSearchParams();
     if (fields.searchStudentId.value) params.set("studentId", fields.searchStudentId.value);
@@ -74,7 +80,24 @@ async function loadTransactions() {
     emptyTransactions.classList.remove("hidden");
     emptyTransactions.textContent = error.message;
     transactionCount.textContent = "載入失敗";
+    AppUI.toast(error.message, "error");
+  } finally {
+    AppUI.hideLoading();
   }
+}
+
+function insertTransactionControls() {
+  document.querySelector(".table-wrap").insertAdjacentHTML("beforebegin", `
+    <div class="utility-row">
+      <input id="transactionSearch" class="table-search" type="search" placeholder="搜尋學生、項目或分數" />
+      <div id="transactionPagination" class="pagination"></div>
+    </div>
+  `);
+  document.querySelector("#transactionSearch").addEventListener("input", (event) => {
+    transactionSearchTerm = event.target.value.trim().toLowerCase();
+    currentPage = 1;
+    renderTransactions();
+  });
 }
 
 function renderStudentOptions() {
@@ -97,9 +120,23 @@ function renderScoreItemOptions() {
 }
 
 function renderTransactions() {
-  transactionCount.textContent = `共 ${transactions.length} 筆異動`;
-  emptyTransactions.classList.toggle("hidden", transactions.length > 0);
-  transactionsTableBody.innerHTML = transactions.map(renderTransactionRow).join("");
+  const filtered = transactions.filter((transaction) => {
+    const itemLabel = transaction.scoreItem
+      ? `${transaction.scoreItem.mainCategory} ${transaction.scoreItem.subCategory}`
+      : "";
+    const haystack = `${transaction.student?.name || ""} ${itemLabel} ${transaction.type} ${transaction.scoreChange}`.toLowerCase();
+    return haystack.includes(transactionSearchTerm);
+  });
+  const pageResult = AppUI.paginate(filtered, currentPage, pageSize);
+  currentPage = pageResult.page;
+
+  transactionCount.textContent = `共 ${filtered.length} 筆異動`;
+  emptyTransactions.classList.toggle("hidden", pageResult.items.length > 0);
+  transactionsTableBody.innerHTML = pageResult.items.map(renderTransactionRow).join("");
+  AppUI.renderPagination(document.querySelector("#transactionPagination"), currentPage, pageResult.totalPages, (page) => {
+    currentPage = page;
+    renderTransactions();
+  });
 
   transactionsTableBody.querySelectorAll("[data-edit]").forEach((button) => {
     button.addEventListener("click", () => editTransaction(button.dataset.edit));
@@ -142,6 +179,7 @@ function renderTransactionRow(transaction) {
 
 async function saveTransaction(event) {
   event.preventDefault();
+  clearFieldErrors();
   hideFormError();
 
   const payload = {
@@ -154,6 +192,7 @@ async function saveTransaction(event) {
 
   const validation = validateTransaction(payload);
   if (!validation.valid) {
+    showFieldError(validation.field, validation.message);
     return showFormError(validation.message);
   }
 
@@ -161,6 +200,7 @@ async function saveTransaction(event) {
   const url = id ? `/api/score-transactions/${id}` : "/api/score-transactions";
   const method = id ? "PUT" : "POST";
 
+  AppUI.showLoading("儲存分數異動");
   try {
     await requestJson(url, {
       method,
@@ -168,9 +208,13 @@ async function saveTransaction(event) {
       body: JSON.stringify(payload),
     });
     resetTransactionForm();
+    AppUI.toast(id ? "分數異動已更新" : "分數異動已新增");
     await Promise.all([loadStudents(), loadTransactions()]);
   } catch (error) {
     showFormError(error.message);
+    AppUI.toast(error.message, "error");
+  } finally {
+    AppUI.hideLoading();
   }
 }
 
@@ -196,22 +240,20 @@ async function deleteTransaction(id) {
     return;
   }
 
-  await requestJson(`/api/score-transactions/${id}`, { method: "DELETE" });
-  await Promise.all([loadStudents(), loadTransactions()]);
+  AppUI.showLoading("刪除分數異動");
+  try {
+    await requestJson(`/api/score-transactions/${id}`, { method: "DELETE" });
+    AppUI.toast("分數異動已刪除");
+    await Promise.all([loadStudents(), loadTransactions()]);
+  } catch (error) {
+    AppUI.toast(error.message, "error");
+  } finally {
+    AppUI.hideLoading();
+  }
 }
 
-async function openHistory(id) {
-  historyContent.innerHTML = `<p class="meta">載入中</p>`;
-  historyDialog.showModal();
-
-  try {
-    const logs = await requestJson(`/api/score-transactions/${id}/audit-logs`);
-    historyContent.innerHTML = logs.length
-      ? logs.map(renderHistoryEntry).join("")
-      : `<p class="meta">尚無異動歷程</p>`;
-  } catch (error) {
-    historyContent.innerHTML = `<p class="error-text">${escapeHtml(error.message)}</p>`;
-  }
+function openHistory(id) {
+  window.location.href = `/audit-logs?tableName=ScoreTransaction&recordId=${encodeURIComponent(id)}`;
 }
 
 function renderHistoryEntry(log) {
@@ -252,6 +294,9 @@ function resetSearch() {
   fields.searchStudentId.value = "";
   fields.dateFrom.value = "";
   fields.dateTo.value = "";
+  transactionSearchTerm = "";
+  document.querySelector("#transactionSearch").value = "";
+  currentPage = 1;
   history.replaceState(null, "", "/score-transactions");
   loadTransactions();
 }
@@ -267,23 +312,23 @@ function applyInitialQueryParams() {
 
 function validateTransaction(data) {
   if (!data.studentId) {
-    return { valid: false, message: "請選擇學生" };
+    return { valid: false, field: "studentId", message: "請選擇學生" };
   }
 
   if (data.type !== "REWARD" && data.type !== "PENALTY") {
-    return { valid: false, message: "請選擇加分或減分" };
+    return { valid: false, field: "type", message: "請選擇加分或減分" };
   }
 
   if (!data.scoreItemId) {
-    return { valid: false, message: "請選擇主項-子項" };
+    return { valid: false, field: "scoreItemId", message: "請選擇主項-子項" };
   }
 
   if (!Number.isInteger(data.scoreChange) || data.scoreChange <= 0) {
-    return { valid: false, message: "分數必須是正整數" };
+    return { valid: false, field: "scoreChange", message: "分數必須是正整數" };
   }
 
   if (!data.transactionDate || Number.isNaN(new Date(data.transactionDate).getTime())) {
-    return { valid: false, message: "請選擇有效的異動日期" };
+    return { valid: false, field: "transactionDate", message: "請選擇有效的異動日期" };
   }
 
   return { valid: true };
@@ -292,6 +337,16 @@ function validateTransaction(data) {
 function showFormError(message) {
   formError.textContent = message;
   formError.classList.remove("hidden");
+}
+
+function showFieldError(field, message) {
+  const input = fields[field];
+  if (!input) return;
+  input.insertAdjacentHTML("afterend", `<p class="field-error">${escapeHtml(message)}</p>`);
+}
+
+function clearFieldErrors() {
+  transactionForm.querySelectorAll(".field-error").forEach((node) => node.remove());
 }
 
 function hideFormError() {

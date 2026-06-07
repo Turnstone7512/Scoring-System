@@ -1,0 +1,87 @@
+﻿<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>?啣?甇瑞??亥岷</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/audit-logs.css" />
+  </head>
+  <body class="theme-audit-logs">
+    <header class="app-header">
+      <div>
+        <h1>?啣?甇瑞??亥岷</h1>
+        <p>?亥岷????憓耨?嫘?斤???/p>
+      </div>
+      <div class="header-actions">
+        <a class="secondary-link" href="/">Dashboard</a>
+        <a class="secondary-link" href="/students">摮貊?蝞∠?</a>
+        <a class="secondary-link" href="/score-items">??????/a>
+        <a class="secondary-link" href="/score-transactions">??啣?</a>
+        <a class="secondary-link" href="/reports/score-details">??敦?梯”</a>
+      </div>
+    </header>
+
+    <main class="audit-page">
+      <section class="audit-panel">
+        <div class="section-title">
+          <div>
+            <h2>?亥岷璇辣</h2>
+            <p class="meta">?臬??恣????風蝔?葆?亥??”????ID??/p>
+          </div>
+        </div>
+
+        <form id="auditSearchForm" class="audit-search-grid">
+          <label>
+            鞈?銵?            <select id="tableName">
+              <option value="">?券鞈?銵?/option>
+              <option value="Student">Student</option>
+              <option value="ScoreItem">ScoreItem</option>
+              <option value="ScoreTransaction">ScoreTransaction</option>
+              <option value="UserAccount">UserAccount</option>
+            </select>
+          </label>
+          <label>
+            ??
+            <select id="action">
+              <option value="">?券??</option>
+              <option value="CREATE">CREATE</option>
+              <option value="UPDATE">UPDATE</option>
+              <option value="DELETE">DELETE</option>
+            </select>
+          </label>
+          <label>
+            ?交?韏?            <input id="dateFrom" type="date" />
+          </label>
+          <label>
+            ?交?閮?            <input id="dateTo" type="date" />
+          </label>
+          <label class="wide-field">
+            鞈? ID recordId
+            <input id="recordId" type="text" placeholder="頛詨鞈? ID" />
+          </label>
+          <div class="form-actions align-end">
+            <button type="submit">?亥岷</button>
+            <button id="clearButton" class="secondary-button" type="button">皜璇辣</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="audit-panel">
+        <div class="section-title">
+          <div>
+            <h2>?亥岷蝯?</h2>
+            <p id="resultCount" class="meta">頛銝?/p>
+          </div>
+        </div>
+
+        <div id="auditList" class="audit-list" aria-live="polite"></div>
+        <div id="emptyAuditLogs" class="empty-state hidden">?亦?啣?甇瑞?</div>
+      </section>
+    </main>
+
+    <script src="/ui-utils.js"></script>
+    <script src="/audit-logs.js"></script>
+  </body>
+</html>
+

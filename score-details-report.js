@@ -16,13 +16,19 @@ const fields = {
 let students = [];
 let scoreItems = [];
 let rows = [];
+let searchTerm = "";
+let currentPage = 1;
+const pageSize = 10;
 let sortState = {
   key: "date",
   direction: "desc",
 };
 
+insertReportControls();
+
 searchForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  currentPage = 1;
   loadReport();
 });
 
@@ -31,6 +37,7 @@ clearButton.addEventListener("click", () => {
   Array.from(fields.scoreItemIds.options).forEach((option) => {
     option.selected = false;
   });
+  currentPage = 1;
   loadReport();
 });
 
@@ -70,82 +77,128 @@ async function loadScoreItems() {
 }
 
 async function loadReport() {
+  AppUI.showLoading("載入分數明細報表");
   try {
     const params = new URLSearchParams();
-    const selectedScoreItemIds = getSelectedScoreItemIds();
-
+    getSelectedScoreItemIds().forEach((id) => params.append("scoreItemId", id));
     if (fields.studentId.value) params.set("studentId", fields.studentId.value);
     if (fields.dateFrom.value) params.set("dateFrom", fields.dateFrom.value);
     if (fields.dateTo.value) params.set("dateTo", fields.dateTo.value);
     if (fields.type.value) params.set("type", fields.type.value);
-    selectedScoreItemIds.forEach((id) => params.append("scoreItemId", id));
 
-    const query = params.toString() ? `?${params.toString()}` : "";
-    rows = await requestJson(`/api/reports/score-details${query}`);
+    rows = await requestJson(`/api/reports/score-details${params.toString() ? `?${params}` : ""}`);
     renderReport();
   } catch (error) {
     reportTableBody.innerHTML = "";
     emptyReport.classList.remove("hidden");
     emptyReport.textContent = error.message;
     resultCount.textContent = "載入失敗";
+    AppUI.toast(error.message, "error");
+  } finally {
+    AppUI.hideLoading();
   }
 }
 
+function insertReportControls() {
+  document.querySelector(".table-wrap").insertAdjacentHTML("beforebegin", `
+    <div class="utility-row">
+      <input id="reportKeywordSearch" class="table-search" type="search" placeholder="搜尋學生、項目、類型或分數" />
+      <div class="form-actions">
+        <button id="exportCsvButton" class="secondary-button" type="button">匯出 CSV</button>
+      </div>
+      <div id="reportPagination" class="pagination"></div>
+    </div>
+  `);
+  document.querySelector("#reportKeywordSearch").addEventListener("input", (event) => {
+    searchTerm = event.target.value.trim().toLowerCase();
+    currentPage = 1;
+    renderReport();
+  });
+  document.querySelector("#exportCsvButton").addEventListener("click", exportCsv);
+}
+
 function renderReport() {
-  const sortedRows = [...rows].sort(compareRows);
-  resultCount.textContent = `共 ${sortedRows.length} 筆明細`;
-  emptyReport.classList.toggle("hidden", sortedRows.length > 0);
+  const filtered = getFilteredRows();
+  const sortedRows = [...filtered].sort(compareRows);
+  const pageResult = AppUI.paginate(sortedRows, currentPage, pageSize);
+  currentPage = pageResult.page;
+
+  resultCount.textContent = `共 ${filtered.length} 筆明細`;
+  emptyReport.classList.toggle("hidden", pageResult.items.length > 0);
   renderSortIndicators();
-  reportTableBody.innerHTML = sortedRows.map(renderReportRow).join("");
+  reportTableBody.innerHTML = pageResult.items.map(renderReportRow).join("");
+  AppUI.renderPagination(document.querySelector("#reportPagination"), currentPage, pageResult.totalPages, (page) => {
+    currentPage = page;
+    renderReport();
+  });
 }
 
 function renderReportRow(row) {
   const typeLabel = row.type === "REWARD" ? "加分" : "減分";
   const typeClass = row.type === "REWARD" ? "reward" : "penalty";
-  const itemLabel = row.scoreItem
-    ? `${row.scoreItem.mainCategory} - ${row.scoreItem.subCategory}`
-    : "-";
-
   return `
     <tr>
       <td>${escapeHtml(row.student?.name || "-")}</td>
       <td>${formatDate(row.transactionDate)}</td>
       <td><span class="type-pill ${typeClass}">${typeLabel}</span></td>
-      <td>${escapeHtml(itemLabel)}</td>
+      <td>${escapeHtml(getItemLabel(row))}</td>
       <td>${row.scoreChange}</td>
       <td>${row.runningTotalScore}</td>
     </tr>
   `;
 }
 
+function getFilteredRows() {
+  return rows.filter((row) => {
+    const haystack = `${row.student?.name || ""} ${getItemLabel(row)} ${row.type} ${row.scoreChange} ${row.runningTotalScore}`.toLowerCase();
+    return haystack.includes(searchTerm);
+  });
+}
+
+function exportCsv() {
+  const exportRows = [...getFilteredRows()].sort(compareRows);
+  const headers = ["學生", "日期", "加分 / 減分 / 全部", "主項-子項", "加分或減分數", "異動後總分"];
+  const lines = [
+    headers.map(csvCell).join(","),
+    ...exportRows.map((row) => [
+      row.student?.name || "",
+      formatDate(row.transactionDate),
+      row.type === "REWARD" ? "加分" : "減分",
+      getItemLabel(row),
+      row.scoreChange,
+      row.runningTotalScore,
+    ].map(csvCell).join(",")),
+  ];
+  const blob = new Blob([`\ufeff${lines.join("\r\n")}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `score-details-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  AppUI.toast("CSV 已匯出");
+}
+
+function csvCell(value) {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+}
+
+function getItemLabel(row) {
+  return row.scoreItem ? `${row.scoreItem.mainCategory} - ${row.scoreItem.subCategory}` : "-";
+}
+
 function compareRows(a, b) {
   const direction = sortState.direction === "asc" ? 1 : -1;
   const aValue = getSortValue(a, sortState.key);
   const bValue = getSortValue(b, sortState.key);
-
-  if (typeof aValue === "number" && typeof bValue === "number") {
-    return (aValue - bValue) * direction;
-  }
-
-  return String(aValue).localeCompare(String(bValue), "zh-Hant", {
-    numeric: true,
-    sensitivity: "base",
-  }) * direction;
+  if (typeof aValue === "number" && typeof bValue === "number") return (aValue - bValue) * direction;
+  return String(aValue).localeCompare(String(bValue), "zh-Hant", { numeric: true, sensitivity: "base" }) * direction;
 }
 
 function getSortValue(row, key) {
-  if (key === "date") {
-    return new Date(row.transactionDate).getTime();
-  }
-
-  if (key === "student") {
-    return row.student?.name || "";
-  }
-
-  if (key === "score") {
-    return Number(row.scoreChange || 0);
-  }
-
+  if (key === "date") return new Date(row.transactionDate).getTime();
+  if (key === "student") return row.student?.name || "";
+  if (key === "score") return Number(row.scoreChange || 0);
   return "";
 }
 
@@ -164,19 +217,12 @@ function getSelectedScoreItemIds() {
 async function requestJson(url, options = {}) {
   const response = await fetch(url, options);
   const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.message || "請求失敗");
-  }
-
+  if (!response.ok) throw new Error(data.message || "請求失敗");
   return data;
 }
 
 function formatDate(value) {
-  return new Intl.DateTimeFormat("zh-TW", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
 function escapeHtml(value) {

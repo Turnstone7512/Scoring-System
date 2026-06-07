@@ -11,11 +11,13 @@
     <header class="app-header">
       <div>
         <h1>計點系統 Dashboard</h1>
-        <p>查看所有學生目前分數與最後異動狀態。</p>
+        <p>查看學生目前分數、最後異動狀態與每月分數趨勢。</p>
       </div>
       <div class="header-actions">
         <a class="secondary-link" href="/score-transactions">分數異動</a>
         <a class="secondary-link" href="/reports/score-details">分數明細報表</a>
+        <a class="secondary-link" href="/audit-logs">異動歷程</a>
+        <a class="secondary-link" href="/user-accounts">使用者帳號</a>
         <a class="secondary-link" href="/score-items">加減分項目</a>
         <a class="secondary-link" href="/students">學生管理</a>
       </div>
@@ -49,18 +51,10 @@
           <table class="dashboard-table">
             <thead>
               <tr>
-                <th>
-                  <button class="sort-button" type="button" data-sort="name">學生姓名 <span data-indicator="name"></span></button>
-                </th>
-                <th>
-                  <button class="sort-button" type="button" data-sort="classNo">班級座號 <span data-indicator="classNo"></span></button>
-                </th>
-                <th>
-                  <button class="sort-button" type="button" data-sort="currentScore">目前分數 <span data-indicator="currentScore"></span></button>
-                </th>
-                <th>
-                  <button class="sort-button" type="button" data-sort="lastTransactionAt">最後異動日 <span data-indicator="lastTransactionAt"></span></button>
-                </th>
+                <th><button class="sort-button" type="button" data-sort="name">學生姓名 <span data-indicator="name"></span></button></th>
+                <th><button class="sort-button" type="button" data-sort="classNo">班級座號 <span data-indicator="classNo"></span></button></th>
+                <th><button class="sort-button" type="button" data-sort="currentScore">目前分數 <span data-indicator="currentScore"></span></button></th>
+                <th><button class="sort-button" type="button" data-sort="lastTransactionAt">最後異動日 <span data-indicator="lastTransactionAt"></span></button></th>
               </tr>
             </thead>
             <tbody id="dashboardTableBody"></tbody>
@@ -68,8 +62,19 @@
           <div id="emptyDashboard" class="empty-state hidden">目前沒有學生資料</div>
         </div>
       </section>
+
+      <section class="dashboard-panel">
+        <div class="section-title">
+          <div>
+            <h2>每月分數趨勢</h2>
+            <p class="meta">X 軸為年月，Y 軸為當月分數異動合計。</p>
+          </div>
+        </div>
+        <div id="monthlyChart" class="monthly-chart" aria-live="polite"></div>
+      </section>
     </main>
 
+    <script src="ui-utils.js"></script>
     <script src="dashboard.js"></script>
   </body>
 </html>

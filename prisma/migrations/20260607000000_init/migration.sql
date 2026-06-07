@@ -4,6 +4,9 @@ CREATE TYPE "ScoreItemType" AS ENUM ('REWARD', 'PENALTY');
 -- CreateEnum
 CREATE TYPE "AuditAction" AS ENUM ('CREATE', 'UPDATE', 'DELETE');
 
+-- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'VIEWER');
+
 -- CreateTable
 CREATE TABLE "Student" (
     "id" TEXT NOT NULL,
@@ -29,7 +32,7 @@ CREATE TABLE "ScoreItem" (
     "id" TEXT NOT NULL,
     "type" "ScoreItemType" NOT NULL,
     "mainCategory" TEXT NOT NULL,
-    "subCategory" TEXT,
+    "subCategory" TEXT NOT NULL,
     "imageUrl" TEXT,
     "score" INTEGER NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
@@ -66,6 +69,19 @@ CREATE TABLE "AuditLog" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserAccount" (
+    "id" TEXT NOT NULL,
+    "account" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "role" "UserRole" NOT NULL,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "UserAccount_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -106,6 +122,15 @@ CREATE INDEX "AuditLog_action_idx" ON "AuditLog"("action");
 
 -- CreateIndex
 CREATE INDEX "AuditLog_createdAt_idx" ON "AuditLog"("createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserAccount_account_key" ON "UserAccount"("account");
+
+-- CreateIndex
+CREATE INDEX "UserAccount_role_idx" ON "UserAccount"("role");
+
+-- CreateIndex
+CREATE INDEX "UserAccount_isDeleted_idx" ON "UserAccount"("isDeleted");
 
 -- AddForeignKey
 ALTER TABLE "ScoreTransaction" ADD CONSTRAINT "ScoreTransaction_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

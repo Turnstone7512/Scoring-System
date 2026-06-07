@@ -119,6 +119,38 @@
   color: var(--primary);
 }
 
+.monthly-chart {
+  min-height: 280px;
+  overflow-x: auto;
+}
+
+.monthly-chart svg {
+  min-width: 640px;
+  width: 100%;
+}
+
+.chart-axis {
+  stroke: #94a3b8;
+  stroke-width: 1;
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.chart-point {
+  fill: var(--primary);
+}
+
+.chart-label {
+  fill: var(--muted);
+  font-size: 12px;
+}
+
 @media (max-width: 760px) {
   .summary-grid {
     grid-template-columns: 1fr;

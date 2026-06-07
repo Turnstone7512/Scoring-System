@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>使用者帳號管理</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/user-accounts.css" />
+  </head>
+  <body class="theme-user-accounts">
+    <header class="app-header">
+      <div>
+        <h1>使用者帳號管理</h1>
+        <p>管理系統使用者帳號、姓名與權限。</p>
+      </div>
+      <div class="header-actions">
+        <a class="secondary-link" href="/">Dashboard</a>
+        <a class="secondary-link" href="/students">學生管理</a>
+        <a class="secondary-link" href="/score-items">加減分項目</a>
+        <a class="secondary-link" href="/score-transactions">分數異動</a>
+        <a class="secondary-link" href="/reports/score-details">分數明細報表</a>
+        <a class="secondary-link" href="/audit-logs">異動歷程</a>
+      </div>
+    </header>
+
+    <main class="accounts-page">
+      <section class="toolbar">
+        <div>
+          <h2>帳號清單</h2>
+          <p id="accountCount" class="meta">載入中</p>
+        </div>
+        <button id="addAccountButton" type="button">新增帳號</button>
+      </section>
+
+      <div class="utility-row">
+        <input id="accountSearch" class="table-search" type="search" placeholder="搜尋帳號、姓名或權限" />
+        <div id="accountPagination" class="pagination"></div>
+      </div>
+
+      <section class="table-wrap" aria-live="polite">
+        <table class="account-table">
+          <thead>
+            <tr>
+              <th>帳號</th>
+              <th>姓名</th>
+              <th>權限</th>
+              <th>建立日</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="accountTableBody"></tbody>
+        </table>
+        <div id="emptyAccounts" class="empty-state hidden">目前沒有帳號資料</div>
+      </section>
+    </main>
+
+    <dialog id="accountDialog" class="modal">
+      <form id="accountForm" method="dialog" class="entry-form modal-form">
+        <div class="modal-title">
+          <h2 id="accountFormTitle">新增帳號</h2>
+          <button id="closeAccountDialog" class="secondary-button icon-button" type="button" aria-label="關閉">×</button>
+        </div>
+        <input id="accountId" type="hidden" />
+        <label>
+          帳號
+          <input id="account" type="text" required maxlength="80" />
+        </label>
+        <label>
+          姓名
+          <input id="name" type="text" required maxlength="80" />
+        </label>
+        <label>
+          權限
+          <select id="role" required>
+            <option value="ADMIN">Admin</option>
+            <option value="VIEWER">Viewer</option>
+          </select>
+        </label>
+        <p id="formError" class="error-text hidden"></p>
+        <div class="form-actions">
+          <button type="submit">儲存</button>
+          <button id="cancelAccountForm" class="secondary-button" type="button">取消</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/ui-utils.js"></script>
+    <script src="/user-accounts.js"></script>
+  </body>
+</html>

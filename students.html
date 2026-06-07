@@ -1,85 +1,87 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>學生管理</title>
+    <title>摮貊?蝞∠?</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="students.css" />
   </head>
   <body class="theme-students">
     <header class="app-header">
       <div>
-        <h1>學生管理</h1>
-        <p>新增、修改、刪除學生資料，並查看異動歷程。</p>
+        <h1>摮貊?蝞∠?</h1>
+        <p>?啣??耨?嫘?文飛????銝行??風蝔?/p>
       </div>
       <div class="header-actions">
-        <a class="secondary-link" href="/">回計點系統</a>
-        <a class="secondary-link" href="/score-items">加減分項目</a>
-        <a class="secondary-link" href="/score-transactions">分數異動</a>
-        <a class="secondary-link" href="/reports/score-details">分數明細報表</a>
+        <a class="secondary-link" href="/">??暺頂蝯?/a>
+        <a class="secondary-link" href="/score-items">??????/a>
+        <a class="secondary-link" href="/score-transactions">??啣?</a>
+        <a class="secondary-link" href="/reports/score-details">??敦?梯”</a>
+        <a class="secondary-link" href="/audit-logs">?啣?甇瑞?</a>
+        <a class="secondary-link" href="/user-accounts">使用者帳號</a>
       </div>
     </header>
 
     <main class="students-page">
       <section class="toolbar">
         <div>
-          <h2>學生清單</h2>
-          <p id="studentCount" class="meta">載入中</p>
+          <h2>摮貊?皜</h2>
+          <p id="studentCount" class="meta">頛銝?/p>
         </div>
-        <button id="addStudentButton" type="button">新增學生</button>
+        <button id="addStudentButton" type="button">?啣?摮貊?</button>
       </section>
 
       <section class="table-wrap" aria-live="polite">
         <table class="student-table">
           <thead>
             <tr>
-              <th>學生名稱</th>
-              <th>年級</th>
-              <th>班級座號</th>
+              <th>摮貊??迂</th>
+              <th>撟渡?</th>
+              <th>?剔?摨扯?</th>
               <th>email</th>
-              <th>目前分數</th>
-              <th>最後異動日</th>
-              <th>操作</th>
+              <th>?桀??</th>
+              <th>?敺?</th>
+              <th>??</th>
             </tr>
           </thead>
           <tbody id="studentsTableBody"></tbody>
         </table>
-        <div id="emptyStudents" class="empty-state hidden">目前沒有學生資料</div>
+        <div id="emptyStudents" class="empty-state hidden">?桀?瘝?摮貊?鞈?</div>
       </section>
     </main>
 
     <dialog id="studentDialog" class="modal">
       <form id="studentForm" method="dialog" class="entry-form modal-form">
         <div class="modal-title">
-          <h2 id="studentFormTitle">新增學生</h2>
-          <button id="closeStudentDialog" class="secondary-button icon-button" type="button" aria-label="關閉">×</button>
+          <h2 id="studentFormTitle">?啣?摮貊?</h2>
+          <button id="closeStudentDialog" class="secondary-button icon-button" type="button" aria-label="??">?</button>
         </div>
         <input id="studentId" type="hidden" />
         <label>
-          學生名稱
+          摮貊??迂
           <input id="name" name="name" type="text" required maxlength="80" />
         </label>
         <label>
-          年級
+          撟渡?
           <input id="grade" name="grade" type="number" min="1" max="9" step="1" required />
         </label>
         <label>
-          班級座號
-          <input id="classNo" name="classNo" type="text" maxlength="30" placeholder="例：三年甲班 12 號" />
+          ?剔?摨扯?
+          <input id="classNo" name="classNo" type="text" maxlength="30" placeholder="靘?銝僑?脩 12 ?? />
         </label>
         <label>
           email
           <input id="email" name="email" type="email" maxlength="120" />
         </label>
         <label>
-          照片網址
+          ?抒?蝬脣?
           <input id="photoUrl" name="photoUrl" type="url" placeholder="https://example.com/photo.jpg" />
         </label>
         <p id="formError" class="error-text hidden"></p>
         <div class="form-actions">
-          <button type="submit">儲存</button>
-          <button id="cancelStudentForm" class="secondary-button" type="button">取消</button>
+          <button type="submit">?脣?</button>
+          <button id="cancelStudentForm" class="secondary-button" type="button">??</button>
         </div>
       </form>
     </dialog>
@@ -87,13 +89,15 @@
     <dialog id="historyDialog" class="modal">
       <section class="entry-form modal-form">
         <div class="modal-title">
-          <h2>學生異動歷程</h2>
-          <button id="closeHistoryDialog" class="secondary-button icon-button" type="button" aria-label="關閉">×</button>
+          <h2>摮貊??啣?甇瑞?</h2>
+          <button id="closeHistoryDialog" class="secondary-button icon-button" type="button" aria-label="??">?</button>
         </div>
         <div id="historyContent" class="history-list"></div>
       </section>
     </dialog>
 
+    <script src="ui-utils.js"></script>
     <script src="students.js"></script>
   </body>
 </html>
+
