@@ -1,0 +1,289 @@
+:root {
+  color-scheme: light;
+  --bg: #f5f7fb;
+  --panel: #ffffff;
+  --text: #1f2937;
+  --muted: #667085;
+  --line: #d7deea;
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --soft: #eaf1ff;
+  --danger: #d92d20;
+  --shadow: 0 10px 30px rgba(31, 41, 55, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 28px clamp(16px, 4vw, 48px);
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+}
+
+.app-header h1 {
+  margin: 0 0 6px;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+}
+
+.app-header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+main {
+  width: min(1180px, calc(100% - 32px));
+  margin: 24px auto 48px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-bottom: 18px;
+}
+
+.tab-button,
+button {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: var(--primary);
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.tab-button {
+  background: #ffffff;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.tab-button.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+button:hover {
+  background: var(--primary-dark);
+}
+
+.secondary-button {
+  background: #ffffff;
+  color: var(--primary);
+  border: 1px solid var(--line);
+}
+
+.secondary-button:hover {
+  background: var(--soft);
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.entry-form {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.entry-form h2 {
+  margin: 0 0 16px;
+  font-size: 1.2rem;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text);
+  background: #ffffff;
+}
+
+input:focus,
+select:focus {
+  outline: 3px solid rgba(37, 99, 235, 0.18);
+  border-color: var(--primary);
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.item-card,
+.student-row {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.item-image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--soft);
+  border: 1px solid var(--line);
+}
+
+.placeholder-image {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.item-card h3,
+.student-row h3 {
+  margin: 12px 0 8px;
+  font-size: 1.05rem;
+}
+
+.meta {
+  color: var(--muted);
+  margin: 4px 0;
+}
+
+.points {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: var(--soft);
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.danger-button {
+  background: #ffffff;
+  color: var(--danger);
+  border: 1px solid #f2b8b5;
+}
+
+.danger-button:hover {
+  background: #fff1f0;
+}
+
+.history {
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.history summary {
+  cursor: pointer;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.history ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.student-list {
+  display: grid;
+  gap: 12px;
+}
+
+.student-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.student-row h3 {
+  margin: 0 0 4px;
+}
+
+.empty-state {
+  min-height: 160px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.hidden {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .app-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tab-panel.active {
+    grid-template-columns: 1fr;
+  }
+
+  .student-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

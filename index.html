@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>國小學童計點系統</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>國小學童計點系統</h1>
+        <p>管理加點項目、扣點項目與學童基本資料。</p>
+      </div>
+      <button id="exportButton" class="secondary-button" type="button">匯出資料</button>
+    </header>
+
+    <main>
+      <nav class="tabs" aria-label="功能切換">
+        <button class="tab-button active" type="button" data-tab="rewards">加點項目</button>
+        <button class="tab-button" type="button" data-tab="penalties">扣點項目</button>
+        <button class="tab-button" type="button" data-tab="students">學童資料</button>
+      </nav>
+
+      <section id="rewards" class="tab-panel active" aria-labelledby="加點項目">
+        <form id="rewardForm" class="entry-form">
+          <h2>新增加點項目</h2>
+          <input type="hidden" id="rewardId" />
+          <label>
+            項目
+            <input id="rewardName" type="text" required placeholder="例：主動幫忙整理教室" />
+          </label>
+          <label>
+            圖片
+            <input id="rewardImage" type="file" accept="image/*" />
+          </label>
+          <label>
+            點數
+            <input id="rewardPoints" type="number" min="1" step="1" required placeholder="例：3" />
+          </label>
+          <div class="form-actions">
+            <button type="submit">儲存加點項目</button>
+            <button id="cancelRewardEdit" class="secondary-button hidden" type="button">取消修改</button>
+          </div>
+        </form>
+        <div id="rewardList" class="item-grid" aria-live="polite"></div>
+      </section>
+
+      <section id="penalties" class="tab-panel" aria-labelledby="扣點項目">
+        <form id="penaltyForm" class="entry-form">
+          <h2>新增扣點項目</h2>
+          <input type="hidden" id="penaltyId" />
+          <label>
+            項目
+            <input id="penaltyName" type="text" required placeholder="例：未按時交作業" />
+          </label>
+          <label>
+            點數
+            <input id="penaltyPoints" type="number" min="1" step="1" required placeholder="例：2" />
+          </label>
+          <div class="form-actions">
+            <button type="submit">儲存扣點項目</button>
+            <button id="cancelPenaltyEdit" class="secondary-button hidden" type="button">取消修改</button>
+          </div>
+        </form>
+        <div id="penaltyList" class="item-grid" aria-live="polite"></div>
+      </section>
+
+      <section id="students" class="tab-panel" aria-labelledby="學童資料">
+        <form id="studentForm" class="entry-form">
+          <h2>新增學童</h2>
+          <input type="hidden" id="studentId" />
+          <label>
+            人名
+            <input id="studentName" type="text" required placeholder="例：王小明" />
+          </label>
+          <label>
+            年級
+            <select id="studentGrade" required>
+              <option value="">請選擇年級</option>
+              <option value="一年級">一年級</option>
+              <option value="二年級">二年級</option>
+              <option value="三年級">三年級</option>
+              <option value="四年級">四年級</option>
+              <option value="五年級">五年級</option>
+              <option value="六年級">六年級</option>
+            </select>
+          </label>
+          <div class="form-actions">
+            <button type="submit">儲存學童</button>
+            <button id="cancelStudentEdit" class="secondary-button hidden" type="button">取消修改</button>
+          </div>
+        </form>
+        <div id="studentList" class="student-list" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
