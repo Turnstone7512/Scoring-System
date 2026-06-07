@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>加減分項目管理</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="score-items.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>加減分項目管理</h1>
+        <p>管理獎勵與扣分項目，並保留每次異動歷程。</p>
+      </div>
+      <div class="header-actions">
+        <a class="secondary-link" href="/">回計點系統</a>
+        <a class="secondary-link" href="/students">學生管理</a>
+      </div>
+    </header>
+
+    <main class="score-items-page">
+      <section class="toolbar">
+        <div>
+          <h2>項目清單</h2>
+          <p id="scoreItemCount" class="meta">載入中</p>
+        </div>
+        <button id="addScoreItemButton" type="button">新增項目</button>
+      </section>
+
+      <nav class="tabs" aria-label="項目類型">
+        <button class="tab-button active" type="button" data-filter="ALL">全部</button>
+        <button class="tab-button" type="button" data-filter="REWARD">加分</button>
+        <button class="tab-button" type="button" data-filter="PENALTY">減分</button>
+      </nav>
+
+      <section class="table-wrap" aria-live="polite">
+        <table class="score-item-table">
+          <thead>
+            <tr>
+              <th>加/減分</th>
+              <th>主項</th>
+              <th>子項</th>
+              <th>分數</th>
+              <th>圖片</th>
+              <th>建立日</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="scoreItemsTableBody"></tbody>
+        </table>
+        <div id="emptyScoreItems" class="empty-state hidden">目前沒有項目資料</div>
+      </section>
+    </main>
+
+    <dialog id="scoreItemDialog" class="modal">
+      <form id="scoreItemForm" method="dialog" class="entry-form modal-form">
+        <div class="modal-title">
+          <h2 id="scoreItemFormTitle">新增項目</h2>
+          <button id="closeScoreItemDialog" class="secondary-button icon-button" type="button" aria-label="關閉">×</button>
+        </div>
+        <input id="scoreItemId" type="hidden" />
+        <label>
+          類型
+          <select id="type" name="type" required>
+            <option value="REWARD">加分 REWARD</option>
+            <option value="PENALTY">減分 PENALTY</option>
+          </select>
+        </label>
+        <label>
+          主項
+          <input id="mainCategory" name="mainCategory" type="text" required maxlength="80" />
+        </label>
+        <label>
+          子項
+          <input id="subCategory" name="subCategory" type="text" required maxlength="80" />
+        </label>
+        <label>
+          圖片網址
+          <input id="imageUrl" name="imageUrl" type="url" placeholder="https://example.com/image.jpg" />
+        </label>
+        <label>
+          分數
+          <input id="score" name="score" type="number" min="1" step="1" required />
+        </label>
+        <p class="meta">減分項目可輸入正數，系統儲存時會自動轉成負數。</p>
+        <p id="formError" class="error-text hidden"></p>
+        <div class="form-actions">
+          <button type="submit">儲存</button>
+          <button id="cancelScoreItemForm" class="secondary-button" type="button">取消</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="historyDialog" class="modal">
+      <section class="entry-form modal-form">
+        <div class="modal-title">
+          <h2>項目異動歷程</h2>
+          <button id="closeHistoryDialog" class="secondary-button icon-button" type="button" aria-label="關閉">×</button>
+        </div>
+        <div id="historyContent" class="history-list"></div>
+      </section>
+    </dialog>
+
+    <script src="score-items.js"></script>
+  </body>
+</html>

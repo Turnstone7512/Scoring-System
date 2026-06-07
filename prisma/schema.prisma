@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ScoreItemType {
+  REWARD
+  PENALTY
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model Student {
+  id                String             @id @default(cuid())
+  name              String
+  grade             Int
+  classNo           String?
+  email             String?            @unique
+  photoUrl          String?
+  currentScore      Int                @default(0)
+  lastTransactionAt DateTime?
+  isDeleted         Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  transactions      ScoreTransaction[]
+
+  @@index([grade])
+  @@index([isDeleted])
+}
+
+model ScoreItem {
+  id           String             @id @default(cuid())
+  type         ScoreItemType
+  mainCategory String
+  subCategory  String?
+  imageUrl     String?
+  score        Int
+  isDeleted    Boolean            @default(false)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  transactions ScoreTransaction[]
+
+  @@index([type])
+  @@index([isDeleted])
+}
+
+model ScoreTransaction {
+  id                String        @id @default(cuid())
+  studentId         String
+  scoreItemId       String
+  type              ScoreItemType
+  scoreChange       Int
+  runningTotalScore Int
+  transactionDate   DateTime      @default(now())
+  isDeleted         Boolean       @default(false)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  student           Student       @relation(fields: [studentId], references: [id])
+  scoreItem         ScoreItem     @relation(fields: [scoreItemId], references: [id])
+
+  @@index([studentId])
+  @@index([scoreItemId])
+  @@index([type])
+  @@index([transactionDate])
+  @@index([isDeleted])
+}
+
+model AuditLog {
+  id        String      @id @default(cuid())
+  tableName String
+  recordId  String
+  action    AuditAction
+  oldValue  Json?
+  newValue  Json?
+  createdAt DateTime    @default(now())
+
+  @@index([tableName, recordId])
+  @@index([action])
+  @@index([createdAt])
+}

@@ -50,6 +50,27 @@ select {
   color: var(--muted);
 }
 
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.secondary-link {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--primary);
+  display: inline-flex;
+  font-weight: 700;
+  padding: 10px 16px;
+  text-decoration: none;
+}
+
+.secondary-link:hover {
+  background: var(--soft);
+}
+
 main {
   width: min(1180px, calc(100% - 32px));
   margin: 24px auto 48px;
