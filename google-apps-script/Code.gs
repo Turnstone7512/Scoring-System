@@ -76,6 +76,8 @@ function handleRequest_(method, e, body, auth) {
 }
 
 function route_(method, path, params, body) {
+  if (path === "/" && method === "GET") return { status: "ok", message: "Scoring System API is running" };
+
   if (path === "/students" && method === "GET") return listStudents_();
   if (path === "/students" && method === "POST") return createStudent_(body);
   let match = path.match(/^\/students\/([^/]+)\/audit-logs$/);
@@ -525,11 +527,13 @@ function getSpreadsheet_() {
 }
 
 function normalizePath_(e) {
+  e = e || {};
   const path = `/${String(e.pathInfo || "").replace(/^api\/?/, "").replace(/^\/+/, "")}`;
   return path === "/" ? "/" : path.replace(/\/$/, "");
 }
 
 function normalizeParams_(e) {
+  e = e || {};
   const params = {};
   Object.keys(e.parameters || {}).forEach((key) => {
     const values = e.parameters[key].filter((value) => value !== "");
@@ -539,6 +543,7 @@ function normalizeParams_(e) {
 }
 
 function parseBody_(e) {
+  e = e || {};
   if (!e.postData || !e.postData.contents) return {};
   try {
     return JSON.parse(e.postData.contents);
