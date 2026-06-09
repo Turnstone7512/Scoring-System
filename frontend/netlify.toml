@@ -1,0 +1,39 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/students"
+  to = "/students.html"
+  status = 200
+
+[[redirects]]
+  from = "/score-items"
+  to = "/score-items.html"
+  status = 200
+
+[[redirects]]
+  from = "/score-transactions"
+  to = "/score-transactions.html"
+  status = 200
+
+[[redirects]]
+  from = "/reports/score-details"
+  to = "/score-details-report.html"
+  status = 200
+
+[[redirects]]
+  from = "/audit-logs"
+  to = "/audit-logs.html"
+  status = 200
+
+[[redirects]]
+  from = "/user-accounts"
+  to = "/user-accounts.html"
+  status = 200
+
+# Replace YOUR_APPS_SCRIPT_DEPLOYMENT_ID after deploying google-apps-script/Code.gs.
+[[redirects]]
+  from = "/api/*"
+  to = "https://script.google.com/macros/s/AKfycbynV9zzqTAq42OPyje8HUrUdljSKZh_-O7darCRQg_C05ZdZ4EKwNo4cP68grup7vr-/exec"
+  status = 200
+  force = true

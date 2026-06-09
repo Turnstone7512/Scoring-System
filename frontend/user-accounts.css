@@ -1,0 +1,99 @@
+.accounts-page {
+  display: grid;
+  gap: 16px;
+}
+
+.toolbar {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 18px 20px;
+}
+
+.toolbar h2 {
+  margin: 0 0 4px;
+}
+
+.table-wrap {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+
+.account-table {
+  border-collapse: collapse;
+  min-width: 760px;
+  width: 100%;
+}
+
+.account-table th,
+.account-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 13px 14px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.account-table th {
+  background: #f8fafc;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.role-pill {
+  border-radius: 999px;
+  display: inline-flex;
+  font-weight: 800;
+  padding: 5px 10px;
+}
+
+.role-pill.admin {
+  background: #eef3ff;
+  color: #4858a0;
+}
+
+.role-pill.viewer {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.modal {
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  width: min(520px, calc(100% - 24px));
+}
+
+.modal::backdrop {
+  background: rgba(15, 23, 42, 0.52);
+}
+
+.modal-form {
+  box-shadow: none;
+  margin: 0;
+}
+
+.modal-title {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.modal-title h2 {
+  margin: 0;
+}
+
+.icon-button {
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 8px 12px;
+}

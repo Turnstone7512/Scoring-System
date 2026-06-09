@@ -1,0 +1,158 @@
+.dashboard-page {
+  display: grid;
+  gap: 18px;
+}
+
+.summary-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.summary-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+}
+
+.summary-card strong {
+  color: var(--primary);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.dashboard-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+}
+
+.section-title {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.section-title h2 {
+  margin: 0 0 4px;
+}
+
+.table-wrap {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.dashboard-table {
+  border-collapse: collapse;
+  min-width: 760px;
+  width: 100%;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 13px 14px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.dashboard-table th {
+  background: #f8fafc;
+}
+
+.dashboard-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.dashboard-row {
+  cursor: pointer;
+}
+
+.dashboard-row:hover {
+  background: #f8fafc;
+}
+
+.sort-button {
+  background: transparent;
+  color: var(--muted);
+  display: inline-flex;
+  gap: 6px;
+  padding: 0;
+}
+
+.sort-button:hover {
+  background: transparent;
+  color: var(--primary);
+}
+
+.score-value {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 1.05rem;
+  font-weight: 900;
+  min-width: 72px;
+  padding: 7px 12px;
+  justify-content: center;
+}
+
+.score-value.positive {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.score-value.negative {
+  background: #fff1f0;
+  color: var(--danger);
+}
+
+.score-value.zero {
+  background: var(--soft);
+  color: var(--primary);
+}
+
+.monthly-chart {
+  min-height: 280px;
+  overflow-x: auto;
+}
+
+.monthly-chart svg {
+  min-width: 640px;
+  width: 100%;
+}
+
+.chart-axis {
+  stroke: #94a3b8;
+  stroke-width: 1;
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.chart-point {
+  fill: var(--primary);
+}
+
+.chart-label {
+  fill: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
