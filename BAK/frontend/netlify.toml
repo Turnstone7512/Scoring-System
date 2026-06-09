@@ -1,0 +1,27 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/students"
+  to = "/students.html"
+  status = 200
+
+[[redirects]]
+  from = "/score-items"
+  to = "/score-items.html"
+  status = 200
+
+[[redirects]]
+  from = "/score-transactions"
+  to = "/score-transactions.html"
+  status = 200
+
+[[redirects]]
+  from = "/reports/score-details"
+  to = "/score-details-report.html"
+  status = 200
+
+[[redirects]]
+  from = "/audit-logs"
+  to = "/audit-logs.html"
+  status = 200

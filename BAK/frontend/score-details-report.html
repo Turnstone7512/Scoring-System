@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>點數明細報表</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/score-details-report.css" />
+  </head>
+  <body class="theme-reports">
+    <header class="app-header">
+      <div><h1>點數明細報表</h1><p>依學生、日期、獎懲類型與項目查詢點數明細。</p></div>
+      <div class="header-actions">
+        <a class="secondary-link" href="/">Dashboard</a>
+        <a class="secondary-link" href="/score-transactions">點數異動</a>
+        <a class="secondary-link admin-only" href="/score-items">獎懲項目異動權限</a>
+        <a class="secondary-link" href="/students">學生管理</a>
+        <a class="secondary-link" href="/audit-logs">異動紀錄</a>
+      </div>
+    </header>
+    <main class="report-page">
+      <section class="report-panel">
+        <div class="section-title"><div><h2>查詢條件</h2><p class="meta">項目可用 Ctrl 或 Shift 複選。</p></div></div>
+        <form id="reportSearchForm" class="report-search-grid">
+          <label>學生<select id="studentId"><option value="">全部學生</option></select></label>
+          <label>起始日期<input id="dateFrom" type="date" /></label>
+          <label>結束日期<input id="dateTo" type="date" /></label>
+          <label>類型<select id="type"><option value="">全部</option><option value="REWARD">獎勵</option><option value="PENALTY">懲罰</option><option value="SETTLEMENT">結餘</option></select></label>
+          <label class="wide-field">主類別 - 子類別<select id="scoreItemIds" multiple size="6"></select></label>
+          <div class="form-actions align-end"><button type="submit">查詢</button><button id="clearButton" class="secondary-button" type="button">清除條件</button></div>
+        </form>
+      </section>
+      <section class="report-panel">
+        <div class="section-title"><div><h2>報表結果</h2><p id="resultCount" class="meta">載入中...</p></div></div>
+        <div class="table-wrap" aria-live="polite">
+          <table class="report-table"><thead><tr><th><button class="sort-button" type="button" data-sort="student">學生 <span data-indicator="student"></span></button></th><th><button class="sort-button" type="button" data-sort="date">日期 <span data-indicator="date"></span></button></th><th>獎勵 / 懲罰</th><th>主類別 - 子類別</th><th><button class="sort-button" type="button" data-sort="score">異動點數 <span data-indicator="score"></span></button></th><th>累計點數</th></tr></thead><tbody id="reportTableBody"></tbody></table>
+          <div id="emptyReport" class="empty-state hidden">沒有符合條件的點數明細</div>
+        </div>
+      </section>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/config.js"></script>
+    <script src="/api-client.js"></script>
+    <script src="/auth.js"></script>
+    <script src="/ui-utils.js"></script>
+    <script src="/score-details-report.js"></script>
+  </body>
+</html>

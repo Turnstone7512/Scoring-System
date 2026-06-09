@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>點數登錄系統 Scoring System</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+  <body class="theme-dashboard">
+    <header class="app-header">
+      <div>
+        <h1>點數登錄系統 Scoring System</h1>
+        <p>查看學生目前點數、最近異動與每月點數統計。</p>
+      </div>
+      <div class="header-actions">
+        <a class="secondary-link" href="/score-transactions">點數異動</a>
+        <a class="secondary-link" href="/reports/score-details">點數明細報表</a>
+        <a class="secondary-link" href="/audit-logs">異動紀錄</a>
+        <a class="secondary-link admin-only" href="/score-items">獎懲項目異動權限</a>
+        <a class="secondary-link" href="/students">學生管理</a>
+      </div>
+    </header>
+    <main class="dashboard-page">
+      <section class="summary-grid">
+        <article class="summary-card"><span class="meta">學生總數</span><strong id="studentTotal">0</strong></article>
+        <article class="summary-card"><span class="meta">總點數</span><strong id="scoreTotal">0</strong></article>
+        <article class="summary-card"><span class="meta">最高點數</span><strong id="highestScore">0</strong></article>
+      </section>
+      <section class="dashboard-panel">
+        <div class="section-title"><div><h2>學生點數總覽</h2><p id="sortStatus" class="meta">依座號排序</p></div></div>
+        <div class="table-wrap" aria-live="polite">
+          <table class="dashboard-table">
+            <thead><tr>
+              <th><button class="sort-button" type="button" data-sort="name">學生姓名 <span data-indicator="name"></span></button></th>
+              <th><button class="sort-button" type="button" data-sort="classNo">座號 <span data-indicator="classNo"></span></button></th>
+              <th><button class="sort-button" type="button" data-sort="currentScore">目前點數 <span data-indicator="currentScore"></span></button></th>
+              <th><button class="sort-button" type="button" data-sort="lastTransactionAt">最後異動時間 <span data-indicator="lastTransactionAt"></span></button></th>
+            </tr></thead>
+            <tbody id="dashboardTableBody"></tbody>
+          </table>
+          <div id="emptyDashboard" class="empty-state hidden">目前沒有學生資料</div>
+        </div>
+      </section>
+      <section class="dashboard-panel">
+        <div class="section-title"><div><h2>每月點數統計</h2><p class="meta">X 軸為月份，Y 軸為每月最後一天點數；每位學生使用不同顏色。</p></div></div>
+        <div id="monthlyChart" class="monthly-chart" aria-live="polite"></div>
+      </section>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="api-client.js"></script>
+    <script src="auth.js"></script>
+    <script src="ui-utils.js"></script>
+    <script src="dashboard.js"></script>
+  </body>
+</html>
