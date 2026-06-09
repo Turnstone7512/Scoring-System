@@ -8,7 +8,7 @@ const sortButtons = document.querySelectorAll("[data-sort]");
 const monthlyChart = document.querySelector("#monthlyChart");
 
 let students = [];
-let monthlyScores = [];
+let monthlyScores = { months: [], students: [] };
 let searchTerm = "";
 let currentPage = 1;
 const pageSize = 10;
@@ -37,13 +37,11 @@ async function loadDashboard() {
     try {
       monthlyScores = await requestJson("/api/reports/monthly-scores");
     } catch (chartError) {
-      monthlyScores = [];
+      monthlyScores = { months: [], students: [] };
       monthlyChart.innerHTML = `<div class="empty-state">${escapeHtml(chartError.message)}</div>`;
     }
     renderDashboard();
-    if (monthlyScores.length) {
-      renderMonthlyChart();
-    }
+    renderMonthlyChart();
   } catch (error) {
     tableBody.innerHTML = "";
     emptyDashboard.classList.remove("hidden");
@@ -124,24 +122,76 @@ function renderStudentRow(student) {
 }
 
 function renderMonthlyChart() {
-  if (!monthlyScores.length) {
+  const months = monthlyScores.months || [];
+  const series = monthlyScores.students || [];
+  if (!months.length || !series.length) {
     monthlyChart.innerHTML = `<div class="empty-state">目前沒有每月積分資料</div>`;
     return;
   }
 
-  const max = Math.max(...monthlyScores.map((row) => Math.abs(Number(row.score || 0))), 1);
-  monthlyChart.innerHTML = monthlyScores.map((row) => {
-    const score = Number(row.score || 0);
-    const height = Math.max(8, Math.round((Math.abs(score) / max) * 120));
-    const className = score >= 0 ? "positive" : "negative";
+  const width = Math.max(760, months.length * 120);
+  const height = 360;
+  const padding = { top: 28, right: 36, bottom: 58, left: 62 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const values = series.flatMap((student) => student.points.map((point) => Number(point.score || 0)));
+  const minValue = Math.min(0, ...values);
+  const maxValue = Math.max(0, ...values);
+  const range = Math.max(1, maxValue - minValue);
+  const yTicks = makeTicks(minValue, maxValue);
+
+  const x = (index) => padding.left + (months.length === 1 ? plotWidth / 2 : (index / (months.length - 1)) * plotWidth);
+  const y = (value) => padding.top + ((maxValue - value) / range) * plotHeight;
+
+  const grid = yTicks.map((tick) => `
+    <line class="chart-grid" x1="${padding.left}" y1="${y(tick)}" x2="${width - padding.right}" y2="${y(tick)}"></line>
+    <text class="chart-label" x="${padding.left - 10}" y="${y(tick) + 4}" text-anchor="end">${tick}</text>
+  `).join("");
+
+  const monthLabels = months.map((month, index) => `
+    <text class="chart-label" x="${x(index)}" y="${height - 18}" text-anchor="middle">${escapeHtml(month)}</text>
+  `).join("");
+
+  const lines = series.map((student) => {
+    const points = student.points.map((point, index) => `${x(index)},${y(Number(point.score || 0))}`).join(" ");
+    const dots = student.points.map((point, index) => `
+      <circle class="chart-point" cx="${x(index)}" cy="${y(Number(point.score || 0))}" r="4" style="fill:${escapeHtml(student.color)}">
+        <title>${escapeHtml(student.name)} ${escapeHtml(point.month)}：${Number(point.score || 0)}</title>
+      </circle>
+    `).join("");
     return `
-      <div class="month-bar">
-        <span class="bar-value">${score}</span>
-        <div class="bar ${className}" style="height:${height}px"></div>
-        <span class="bar-label">${escapeHtml(row.month)}</span>
-      </div>
+      <polyline class="chart-line" points="${points}" style="stroke:${escapeHtml(student.color)}"></polyline>
+      ${dots}
     `;
   }).join("");
+
+  const legend = series.map((student) => `
+    <span class="chart-legend-item"><i style="background:${escapeHtml(student.color)}"></i>${escapeHtml(student.name)}</span>
+  `).join("");
+
+  monthlyChart.innerHTML = `
+    <div class="chart-scroll">
+      <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="每月月底點數折線圖">
+        ${grid}
+        <line class="chart-axis" x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}"></line>
+        <line class="chart-axis" x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}"></line>
+        ${monthLabels}
+        ${lines}
+      </svg>
+    </div>
+    <div class="chart-legend">${legend}</div>
+  `;
+}
+
+function makeTicks(minValue, maxValue) {
+  if (minValue === maxValue) return [minValue];
+  const ticks = [];
+  const step = Math.max(1, Math.ceil((maxValue - minValue) / 4));
+  for (let value = minValue; value <= maxValue; value += step) {
+    ticks.push(value);
+  }
+  if (ticks[ticks.length - 1] !== maxValue) ticks.push(maxValue);
+  return ticks;
 }
 
 function compareStudents(a, b) {

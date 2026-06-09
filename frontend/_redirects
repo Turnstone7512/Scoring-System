@@ -3,5 +3,3 @@
 /score-transactions /score-transactions.html 200
 /reports/score-details /score-details-report.html 200
 /audit-logs /audit-logs.html 200
-/user-accounts /user-accounts.html 200
-/api/* https://script.google.com/macros/s/AKfycbynV9zzqTAq42OPyje8HUrUdljSKZh_-O7darCRQg_C05ZdZ4EKwNo4cP68grup7vr-/exec/:splat 200!

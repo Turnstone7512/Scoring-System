@@ -1,6 +1,8 @@
 window.SCORING_SYSTEM_CONFIG = {
-  // Keep this empty when Netlify proxies /api/* to Google Apps Script.
-  // Direct browser calls to Apps Script may be blocked by CORS, so the
-  // recommended production path is the Netlify rewrite in netlify.toml.
-  apiBaseUrl: "",
+  supabaseUrl: "https://cxqjbwvxwioiehzqamxt.supabase.co",
+  supabaseAnonKey: "sb_publishable_VRZOM-Iy1lw5hMXK7zo5_w_3oTIlYkZ",
+  adminAccounts: [
+    { label: "Gink", email: "gink1222@gmail.com" },
+    { label: "Lelia", email: "viola4378@gmail.com" },
+  ],
 };

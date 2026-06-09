@@ -85,6 +85,11 @@
   color: var(--danger);
 }
 
+.type-pill.settlement {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
 .error-text {
   color: var(--danger);
   font-weight: 700;

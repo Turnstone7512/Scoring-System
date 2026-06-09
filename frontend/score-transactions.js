@@ -1,12 +1,14 @@
 const searchForm = document.querySelector("#searchForm");
 const resetSearchButton = document.querySelector("#resetSearchButton");
 const transactionForm = document.querySelector("#transactionForm");
+const settlementForm = document.querySelector("#settlementForm");
 const transactionFormTitle = document.querySelector("#transactionFormTitle");
 const cancelEditButton = document.querySelector("#cancelEditButton");
 const transactionsTableBody = document.querySelector("#transactionsTableBody");
 const emptyTransactions = document.querySelector("#emptyTransactions");
 const transactionCount = document.querySelector("#transactionCount");
 const formError = document.querySelector("#formError");
+const settlementError = document.querySelector("#settlementError");
 
 const fields = {
   transactionId: document.querySelector("#transactionId"),
@@ -18,6 +20,9 @@ const fields = {
   scoreItemId: document.querySelector("#scoreItemId"),
   scoreChange: document.querySelector("#scoreChange"),
   transactionDate: document.querySelector("#transactionDate"),
+  settlementStudentId: document.querySelector("#settlementStudentId"),
+  settlementScore: document.querySelector("#settlementScore"),
+  settlementDate: document.querySelector("#settlementDate"),
 };
 
 let students = [];
@@ -35,6 +40,7 @@ searchForm.addEventListener("submit", (event) => {
 });
 resetSearchButton.addEventListener("click", resetSearch);
 transactionForm.addEventListener("submit", saveTransaction);
+settlementForm.addEventListener("submit", saveSettlement);
 cancelEditButton.addEventListener("click", resetTransactionForm);
 fields.type.addEventListener("change", () => {
   renderScoreItemOptions();
@@ -102,6 +108,7 @@ function renderStudentOptions() {
     .join("");
   fields.searchStudentId.innerHTML = `<option value="">全部學生</option>${options}`;
   fields.studentId.innerHTML = `<option value="">請選擇學生</option>${options}`;
+  fields.settlementStudentId.innerHTML = `<option value="">請選擇學生</option>${options}`;
 }
 
 function renderScoreItemOptions() {
@@ -115,7 +122,7 @@ function renderScoreItemOptions() {
 
 function renderTransactions() {
   const filtered = transactions.filter((transaction) => {
-    const itemLabel = transaction.scoreItem ? `${transaction.scoreItem.mainCategory} ${transaction.scoreItem.subCategory}` : "";
+    const itemLabel = getTransactionItemLabel(transaction);
     const haystack = `${transaction.student?.name || ""} ${itemLabel} ${transaction.type} ${transaction.scoreChange}`.toLowerCase();
     return haystack.includes(transactionSearchTerm);
   });
@@ -136,9 +143,9 @@ function renderTransactions() {
 }
 
 function renderTransactionRow(transaction) {
-  const typeLabel = transaction.type === "REWARD" ? "獎勵" : "懲罰";
-  const typeClass = transaction.type === "REWARD" ? "reward" : "penalty";
-  const itemLabel = transaction.scoreItem ? `${transaction.scoreItem.mainCategory} - ${transaction.scoreItem.subCategory}` : "-";
+  const typeLabel = getTypeLabel(transaction.type);
+  const typeClass = getTypeClass(transaction.type);
+  const itemLabel = getTransactionItemLabel(transaction);
   return `
     <tr>
       <td>${escapeHtml(transaction.student?.name || "-")}</td>
@@ -198,16 +205,50 @@ async function saveTransaction(event) {
 function editTransaction(id) {
   const transaction = transactions.find((entry) => entry.id === id);
   if (!transaction) return;
+  if (!transaction.scoreItemId) {
+    AppUI.toast("結算異動請刪除後重新建立。", "error");
+    return;
+  }
   fields.transactionId.value = transaction.id;
   fields.studentId.value = transaction.studentId;
   fields.type.value = transaction.type;
   renderScoreItemOptions();
   fields.scoreItemId.value = transaction.scoreItemId;
   fields.scoreChange.value = Math.abs(transaction.scoreChange);
-  fields.transactionDate.value = toDateTimeLocal(transaction.transactionDate);
+  fields.transactionDate.value = toDateInputValue(transaction.transactionDate);
   transactionFormTitle.textContent = "編輯積分異動";
   cancelEditButton.classList.remove("hidden");
   fields.studentId.focus();
+}
+
+async function saveSettlement(event) {
+  event.preventDefault();
+  hideSettlementError();
+  const payload = {
+    studentId: fields.settlementStudentId.value,
+    targetScore: Number(fields.settlementScore.value),
+    transactionDate: fields.settlementDate.value,
+  };
+  const validation = validateSettlement(payload);
+  if (!validation.valid) return showSettlementError(validation.message);
+
+  AppUI.showLoading("建立結算...");
+  try {
+    await requestJson("/api/score-transactions/settlement", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    settlementForm.reset();
+    fields.settlementDate.value = toDateInputValue(new Date());
+    AppUI.toast("結算已建立");
+    await Promise.all([loadStudents(), loadTransactions()]);
+  } catch (error) {
+    showSettlementError(error.message);
+    AppUI.toast(error.message, "error");
+  } finally {
+    AppUI.hideLoading();
+  }
 }
 
 async function deleteTransaction(id) {
@@ -240,7 +281,8 @@ function resetTransactionForm() {
   fields.type.value = "REWARD";
   renderScoreItemOptions();
   fillScoreFromSelectedItem();
-  fields.transactionDate.value = toDateTimeLocal(new Date());
+  fields.transactionDate.value = toDateInputValue(new Date());
+  fields.settlementDate.value = fields.settlementDate.value || toDateInputValue(new Date());
   transactionFormTitle.textContent = "新增積分異動";
   cancelEditButton.classList.add("hidden");
   hideFormError();
@@ -268,9 +310,33 @@ function validateTransaction(data) {
   if (!data.scoreItemId) return { valid: false, field: "scoreItemId", message: "請選擇項目" };
   if (!Number.isInteger(data.scoreChange) || data.scoreChange <= 0) return { valid: false, field: "scoreChange", message: "分數必須是正整數" };
   if (!data.transactionDate || Number.isNaN(new Date(data.transactionDate).getTime())) {
-    return { valid: false, field: "transactionDate", message: "請選擇有效的異動時間" };
+    return { valid: false, field: "transactionDate", message: "請選擇有效的生效日期" };
   }
   return { valid: true };
+}
+
+function validateSettlement(data) {
+  if (!data.studentId) return { valid: false, message: "請選擇學生" };
+  if (!Number.isInteger(data.targetScore)) return { valid: false, message: "結餘點數必須是整數" };
+  if (!data.transactionDate || Number.isNaN(new Date(data.transactionDate).getTime())) {
+    return { valid: false, message: "請選擇有效的生效日期" };
+  }
+  return { valid: true };
+}
+
+function getTransactionItemLabel(transaction) {
+  if (transaction.scoreItem) return `${transaction.scoreItem.mainCategory} - ${transaction.scoreItem.subCategory}`;
+  return "結算 - 結餘調整";
+}
+
+function getTypeLabel(type) {
+  if (type === "SETTLEMENT") return "結餘";
+  return type === "REWARD" ? "獎勵" : "懲罰";
+}
+
+function getTypeClass(type) {
+  if (type === "SETTLEMENT") return "settlement";
+  return type === "REWARD" ? "reward" : "penalty";
 }
 
 function showFormError(message) {
@@ -293,6 +359,16 @@ function hideFormError() {
   formError.classList.add("hidden");
 }
 
+function showSettlementError(message) {
+  settlementError.textContent = message;
+  settlementError.classList.remove("hidden");
+}
+
+function hideSettlementError() {
+  settlementError.textContent = "";
+  settlementError.classList.add("hidden");
+}
+
 async function requestJson(url, options = {}) {
   const response = await fetch(url, options);
   const data = await response.json().catch(() => ({}));
@@ -302,7 +378,7 @@ async function requestJson(url, options = {}) {
 
 function formatDate(value) {
   if (!value) return "-";
-  return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(value));
 }
 
 function toDateTimeLocal(value) {
@@ -310,6 +386,13 @@ function toDateTimeLocal(value) {
   const offset = date.getTimezoneOffset();
   const local = new Date(date.getTime() - offset * 60 * 1000);
   return local.toISOString().slice(0, 16);
+}
+
+function toDateInputValue(value) {
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - offset * 60 * 1000);
+  return local.toISOString().slice(0, 10);
 }
 
 function escapeHtml(value) {

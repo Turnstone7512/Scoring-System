@@ -16,7 +16,6 @@
         <a class="secondary-link" href="/score-transactions">點數異動</a>
         <a class="secondary-link" href="/reports/score-details">點數明細報表</a>
         <a class="secondary-link" href="/audit-logs">異動紀錄</a>
-        <a class="secondary-link admin-only" href="/user-accounts">使用者帳號</a>
       </div>
     </header>
     <main class="students-page">
@@ -42,9 +41,10 @@
         <div class="form-actions"><button type="submit">儲存</button><button id="cancelStudentForm" class="secondary-button" type="button">取消</button></div>
       </form>
     </dialog>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
-    <script src="auth.js"></script>
     <script src="api-client.js"></script>
+    <script src="auth.js"></script>
     <script src="ui-utils.js"></script>
     <script src="students.js"></script>
   </body>

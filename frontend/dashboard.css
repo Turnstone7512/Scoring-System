@@ -121,6 +121,9 @@
 
 .monthly-chart {
   min-height: 280px;
+}
+
+.chart-scroll {
   overflow-x: auto;
 }
 
@@ -134,21 +137,43 @@
   stroke-width: 1;
 }
 
+.chart-grid {
+  stroke: #e2e8f0;
+  stroke-width: 1;
+}
+
 .chart-line {
   fill: none;
-  stroke: var(--primary);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 3;
 }
 
-.chart-point {
-  fill: var(--primary);
-}
-
 .chart-label {
   fill: var(--muted);
   font-size: 12px;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-top: 12px;
+}
+
+.chart-legend-item {
+  align-items: center;
+  color: var(--text);
+  display: inline-flex;
+  font-size: 0.92rem;
+  gap: 7px;
+}
+
+.chart-legend-item i {
+  border-radius: 999px;
+  display: inline-block;
+  height: 10px;
+  width: 10px;
 }
 
 @media (max-width: 760px) {

@@ -17,7 +17,6 @@
         <a class="secondary-link" href="/score-transactions">點數異動</a>
         <a class="secondary-link" href="/reports/score-details">點數明細報表</a>
         <a class="secondary-link" href="/audit-logs">異動紀錄</a>
-        <a class="secondary-link admin-only" href="/user-accounts">使用者帳號</a>
         <a class="secondary-link admin-only" href="/score-items">獎懲項目異動權限</a>
         <a class="secondary-link" href="/students">學生管理</a>
       </div>
@@ -44,13 +43,14 @@
         </div>
       </section>
       <section class="dashboard-panel">
-        <div class="section-title"><div><h2>每月點數統計</h2><p class="meta">X 軸為月份，Y 軸為每月點數異動總和。</p></div></div>
+        <div class="section-title"><div><h2>每月點數統計</h2><p class="meta">X 軸為月份，Y 軸為每月最後一天點數；每位學生使用不同顏色。</p></div></div>
         <div id="monthlyChart" class="monthly-chart" aria-live="polite"></div>
       </section>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
-    <script src="auth.js"></script>
     <script src="api-client.js"></script>
+    <script src="auth.js"></script>
     <script src="ui-utils.js"></script>
     <script src="dashboard.js"></script>
   </body>

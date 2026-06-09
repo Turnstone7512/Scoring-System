@@ -128,8 +128,8 @@ function renderReport() {
 }
 
 function renderReportRow(row) {
-  const typeLabel = row.type === "REWARD" ? "獎勵" : "懲罰";
-  const typeClass = row.type === "REWARD" ? "reward" : "penalty";
+  const typeLabel = getTypeLabel(row.type);
+  const typeClass = getTypeClass(row.type);
   return `
     <tr>
       <td>${escapeHtml(row.student?.name || "-")}</td>
@@ -157,7 +157,7 @@ function exportCsv() {
     ...exportRows.map((row) => [
       row.student?.name || "",
       formatDate(row.transactionDate),
-      row.type === "REWARD" ? "獎勵" : "懲罰",
+      getTypeLabel(row.type),
       getItemLabel(row),
       row.scoreChange,
       row.runningTotalScore,
@@ -179,6 +179,16 @@ function csvCell(value) {
 
 function getItemLabel(row) {
   return row.scoreItem ? `${row.scoreItem.mainCategory} - ${row.scoreItem.subCategory}` : "-";
+}
+
+function getTypeLabel(type) {
+  if (type === "SETTLEMENT") return "結餘";
+  return type === "REWARD" ? "獎勵" : "懲罰";
+}
+
+function getTypeClass(type) {
+  if (type === "SETTLEMENT") return "settlement";
+  return type === "REWARD" ? "reward" : "penalty";
 }
 
 function compareRows(a, b) {
