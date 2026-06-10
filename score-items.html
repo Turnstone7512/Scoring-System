@@ -11,18 +11,18 @@
     <header class="app-header">
       <div><h1>獎懲項目異動權限</h1><p>設定加點與扣點項目，作為學生點數異動的依據。</p></div>
       <div class="header-actions">
-        <a class="secondary-link" href="/">Dashboard</a>
-        <a class="secondary-link" href="/students">學生管理</a>
-        <a class="secondary-link" href="/score-transactions">點數異動</a>
-        <a class="secondary-link" href="/reports/score-details">點數明細報表</a>
-        <a class="secondary-link" href="/audit-logs">異動紀錄</a>
+        <a class="secondary-link" href="index.html">Dashboard</a>
+        <a class="secondary-link" href="students.html">學生管理</a>
+        <a class="secondary-link" href="score-transactions.html">點數異動</a>
+        <a class="secondary-link" href="score-details-report.html">點數明細報表</a>
+        <a class="secondary-link" href="audit-logs.html">異動紀錄</a>
       </div>
     </header>
     <main class="score-items-page admin-only">
       <section class="toolbar"><div><h2>項目清單</h2><p id="scoreItemCount" class="meta">載入中...</p></div><button id="addScoreItemButton" type="button">新增項目</button></section>
       <nav class="tabs" aria-label="項目類型"><button class="tab-button active" type="button" data-filter="ALL">全部</button><button class="tab-button" type="button" data-filter="REWARD">獎勵</button><button class="tab-button" type="button" data-filter="PENALTY">懲罰</button></nav>
       <section class="table-wrap" aria-live="polite">
-        <table class="score-item-table"><thead><tr><th>類型</th><th>主類別</th><th>子類別</th><th>點數</th><th>圖片</th><th>更新時間</th><th>操作</th></tr></thead><tbody id="scoreItemsTableBody"></tbody></table>
+        <table class="score-item-table"><thead><tr><th>類型</th><th>適用學生</th><th>主類別</th><th>子類別</th><th>點數</th><th>圖片</th><th>更新時間</th><th>操作</th></tr></thead><tbody id="scoreItemsTableBody"></tbody></table>
         <div id="emptyScoreItems" class="empty-state hidden">目前沒有獎懲項目</div>
       </section>
     </main>
@@ -32,6 +32,7 @@
         <div class="modal-title"><h2 id="scoreItemFormTitle">新增項目</h2><button id="closeScoreItemDialog" class="secondary-button icon-button" type="button" aria-label="關閉">×</button></div>
         <input id="scoreItemId" type="hidden" />
         <label>類型<select id="type" name="type" required><option value="REWARD">獎勵 REWARD</option><option value="PENALTY">懲罰 PENALTY</option></select></label>
+        <label>適用學生<select id="studentId" name="studentId"><option value="">所有學生共用</option></select></label>
         <label>主類別<input id="mainCategory" name="mainCategory" type="text" required maxlength="80" /></label>
         <label>子類別<input id="subCategory" name="subCategory" type="text" required maxlength="80" /></label>
         <label>圖片網址<input id="imageUrl" name="imageUrl" type="url" placeholder="https://example.com/image.jpg" /></label>

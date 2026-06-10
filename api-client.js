@@ -156,6 +156,7 @@
     const score = Math.abs(Number(data.score));
     const row = {
       type: data.type,
+      student_id: emptyToNull(data.studentId),
       main_category: text(data.mainCategory),
       sub_category: text(data.subCategory),
       image_url: emptyToNull(data.imageUrl),
@@ -175,6 +176,7 @@
     const score = Math.abs(Number(data.score));
     const row = {
       type: data.type,
+      student_id: emptyToNull(data.studentId),
       main_category: text(data.mainCategory),
       sub_category: text(data.subCategory),
       image_url: emptyToNull(data.imageUrl),
@@ -421,6 +423,7 @@
     return {
       id: row.id,
       type: row.type,
+      studentId: row.student_id,
       mainCategory: row.main_category,
       subCategory: row.sub_category,
       imageUrl: row.image_url,

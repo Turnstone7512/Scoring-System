@@ -4,18 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>點數明細報表</title>
-    <link rel="stylesheet" href="/styles.css" />
-    <link rel="stylesheet" href="/score-details-report.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="score-details-report.css" />
   </head>
   <body class="theme-reports">
     <header class="app-header">
       <div><h1>點數明細報表</h1><p>依學生、日期、獎懲類型與項目查詢點數明細。</p></div>
       <div class="header-actions">
-        <a class="secondary-link" href="/">Dashboard</a>
-        <a class="secondary-link" href="/score-transactions">點數異動</a>
-        <a class="secondary-link admin-only" href="/score-items">獎懲項目異動權限</a>
-        <a class="secondary-link" href="/students">學生管理</a>
-        <a class="secondary-link" href="/audit-logs">異動紀錄</a>
+        <a class="secondary-link" href="index.html">Dashboard</a>
+        <a class="secondary-link" href="score-transactions.html">點數異動</a>
+        <a class="secondary-link admin-only" href="score-items.html">獎懲項目異動權限</a>
+        <a class="secondary-link" href="students.html">學生管理</a>
+        <a class="secondary-link" href="audit-logs.html">異動紀錄</a>
       </div>
     </header>
     <main class="report-page">
@@ -39,10 +39,10 @@
       </section>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/config.js"></script>
-    <script src="/api-client.js"></script>
-    <script src="/auth.js"></script>
-    <script src="/ui-utils.js"></script>
-    <script src="/score-details-report.js"></script>
+    <script src="config.js"></script>
+    <script src="api-client.js"></script>
+    <script src="auth.js"></script>
+    <script src="ui-utils.js"></script>
+    <script src="score-details-report.js"></script>
   </body>
 </html>

@@ -50,7 +50,8 @@ sortButtons.forEach((button) => {
 init();
 
 async function init() {
-  await Promise.all([loadStudents(), loadScoreItems()]);
+  await loadStudents();
+  await loadScoreItems();
   await loadReport();
 }
 
@@ -66,7 +67,8 @@ async function loadScoreItems() {
   fields.scoreItemIds.innerHTML = scoreItems
     .map((item) => {
       const typeLabel = item.type === "REWARD" ? "獎勵" : "懲罰";
-      return `<option value="${item.id}">[${typeLabel}] ${escapeHtml(item.mainCategory)} - ${escapeHtml(item.subCategory)}</option>`;
+      const scope = item.studentId ? `個別：${getStudentName(item.studentId)}` : "共用";
+      return `<option value="${item.id}">[${typeLabel}｜${escapeHtml(scope)}] ${escapeHtml(item.mainCategory)} - ${escapeHtml(item.subCategory)}</option>`;
     })
     .join("");
 }
@@ -189,6 +191,10 @@ function getTypeLabel(type) {
 function getTypeClass(type) {
   if (type === "SETTLEMENT") return "settlement";
   return type === "REWARD" ? "reward" : "penalty";
+}
+
+function getStudentName(studentId) {
+  return students.find((student) => student.id === studentId)?.name || "指定學生";
 }
 
 function compareRows(a, b) {

@@ -46,6 +46,10 @@ fields.type.addEventListener("change", () => {
   renderScoreItemOptions();
   fillScoreFromSelectedItem();
 });
+fields.studentId.addEventListener("change", () => {
+  renderScoreItemOptions();
+  fillScoreFromSelectedItem();
+});
 fields.scoreItemId.addEventListener("change", fillScoreFromSelectedItem);
 
 init();
@@ -113,9 +117,14 @@ function renderStudentOptions() {
 
 function renderScoreItemOptions() {
   const type = fields.type.value;
+  const studentId = fields.studentId.value;
   const options = scoreItems
     .filter((item) => item.type === type)
-    .map((item) => `<option value="${item.id}">${escapeHtml(item.mainCategory)} - ${escapeHtml(item.subCategory)}</option>`)
+    .filter((item) => !item.studentId || item.studentId === studentId)
+    .map((item) => {
+      const scope = item.studentId ? "個別" : "共用";
+      return `<option value="${item.id}">[${scope}] ${escapeHtml(item.mainCategory)} - ${escapeHtml(item.subCategory)}</option>`;
+    })
     .join("");
   fields.scoreItemId.innerHTML = options || `<option value="">沒有可用項目</option>`;
 }
@@ -267,7 +276,7 @@ async function deleteTransaction(id) {
 }
 
 function openHistory(id) {
-  window.location.href = `/audit-logs?tableName=ScoreTransaction&recordId=${encodeURIComponent(id)}`;
+  window.location.href = `audit-logs.html?tableName=ScoreTransaction&recordId=${encodeURIComponent(id)}`;
 }
 
 function fillScoreFromSelectedItem() {
@@ -295,7 +304,7 @@ function resetSearch() {
   transactionSearchTerm = "";
   document.querySelector("#transactionSearch").value = "";
   currentPage = 1;
-  history.replaceState(null, "", "/score-transactions");
+  history.replaceState(null, "", "score-transactions.html");
   loadTransactions();
 }
 

@@ -29,6 +29,7 @@ create unique index if not exists students_email_unique_active
 create table if not exists public.score_items (
   id uuid primary key default gen_random_uuid(),
   type text not null check (type in ('REWARD', 'PENALTY')),
+  student_id uuid references public.students(id),
   main_category text not null,
   sub_category text not null,
   image_url text,
@@ -57,6 +58,9 @@ create index if not exists score_transactions_student_id_idx
 
 create index if not exists score_transactions_transaction_date_idx
   on public.score_transactions (transaction_date desc);
+
+create index if not exists score_items_student_id_idx
+  on public.score_items (student_id);
 
 create table if not exists public.audit_logs (
   id uuid primary key default gen_random_uuid(),
@@ -230,6 +234,12 @@ alter table public.score_transactions
 
 alter table public.score_transactions
   add column if not exists settlement_score integer;
+
+alter table public.score_items
+  add column if not exists student_id uuid references public.students(id);
+
+create index if not exists score_items_student_id_idx
+  on public.score_items (student_id);
 
 alter table public.score_transactions
   drop constraint if exists score_transactions_type_check;

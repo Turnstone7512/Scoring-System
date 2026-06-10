@@ -26,7 +26,7 @@ searchForm.addEventListener("submit", (event) => {
 
 clearButton.addEventListener("click", () => {
   searchForm.reset();
-  history.replaceState(null, "", "/audit-logs");
+  history.replaceState(null, "", "audit-logs.html");
   loadAuditLogs();
 });
 
@@ -56,7 +56,7 @@ async function loadAuditLogs() {
     if (fields.dateTo.value) params.set("dateTo", fields.dateTo.value);
     if (fields.recordId.value.trim()) params.set("recordId", fields.recordId.value.trim());
     const query = params.toString() ? `?${params.toString()}` : "";
-    history.replaceState(null, "", `/audit-logs${query}`);
+    history.replaceState(null, "", `audit-logs.html${query}`);
     auditLogs = await requestJson(`/api/audit-logs${query}`);
     renderAuditLogs();
   } catch (error) {

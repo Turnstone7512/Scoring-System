@@ -86,7 +86,7 @@ function renderDashboard() {
   tableBody.innerHTML = pageResult.items.map(renderStudentRow).join("");
   tableBody.querySelectorAll("[data-student-id]").forEach((row) => {
     row.addEventListener("click", () => {
-      window.location.href = `/score-transactions?studentId=${encodeURIComponent(row.dataset.studentId)}`;
+      window.location.href = `score-transactions.html?studentId=${encodeURIComponent(row.dataset.studentId)}`;
     });
   });
 }

@@ -11,6 +11,7 @@ const filterButtons = document.querySelectorAll("[data-filter]");
 const fields = {
   id: document.querySelector("#scoreItemId"),
   type: document.querySelector("#type"),
+  studentId: document.querySelector("#studentId"),
   mainCategory: document.querySelector("#mainCategory"),
   subCategory: document.querySelector("#subCategory"),
   imageUrl: document.querySelector("#imageUrl"),
@@ -18,6 +19,7 @@ const fields = {
 };
 
 let scoreItems = [];
+let students = [];
 let activeFilter = "ALL";
 let searchTerm = "";
 let currentPage = 1;
@@ -41,7 +43,19 @@ filterButtons.forEach((button) => {
   });
 });
 
-loadScoreItems();
+init();
+
+async function init() {
+  await loadStudents();
+  await loadScoreItems();
+}
+
+async function loadStudents() {
+  students = await requestJson("/api/students");
+  fields.studentId.innerHTML = `<option value="">所有學生共用</option>${students
+    .map((student) => `<option value="${student.id}">${escapeHtml(student.name)}（${escapeHtml(student.classNo || "-")}）</option>`)
+    .join("")}`;
+}
 
 async function loadScoreItems() {
   AppUI.showLoading("載入獎懲項目...");
@@ -80,7 +94,7 @@ function insertImagePreview() {
 function renderScoreItems() {
   const filtered = scoreItems.filter((item) => {
     const matchType = activeFilter === "ALL" || item.type === activeFilter;
-    const haystack = `${item.type} ${item.mainCategory} ${item.subCategory} ${item.score}`.toLowerCase();
+    const haystack = `${item.type} ${getStudentLabel(item.studentId)} ${item.mainCategory} ${item.subCategory} ${item.score}`.toLowerCase();
     return matchType && haystack.includes(searchTerm);
   });
   const pageResult = AppUI.paginate(filtered, currentPage, pageSize);
@@ -108,6 +122,7 @@ function renderScoreItemRow(item) {
   return `
     <tr>
       <td><span class="type-pill ${typeClass}">${typeLabel}</span></td>
+      <td>${escapeHtml(getStudentLabel(item.studentId))}</td>
       <td>${escapeHtml(item.mainCategory)}</td>
       <td>${escapeHtml(item.subCategory)}</td>
       <td>${item.score}</td>
@@ -128,6 +143,7 @@ function openCreateDialog() {
   scoreItemForm.reset();
   fields.id.value = "";
   fields.type.value = "REWARD";
+  fields.studentId.value = "";
   scoreItemFormTitle.textContent = "新增項目";
   clearFieldErrors();
   hideFormError();
@@ -141,6 +157,7 @@ function openEditDialog(id) {
   if (!item) return;
   fields.id.value = item.id;
   fields.type.value = item.type;
+  fields.studentId.value = item.studentId || "";
   fields.mainCategory.value = item.mainCategory;
   fields.subCategory.value = item.subCategory;
   fields.imageUrl.value = item.imageUrl || "";
@@ -158,6 +175,7 @@ async function saveScoreItem(event) {
   clearFieldErrors();
   const payload = {
     type: fields.type.value,
+    studentId: fields.studentId.value,
     mainCategory: fields.mainCategory.value.trim(),
     subCategory: fields.subCategory.value.trim(),
     imageUrl: fields.imageUrl.value.trim(),
@@ -206,7 +224,7 @@ async function deleteScoreItem(id) {
 }
 
 function openHistory(id) {
-  window.location.href = `/audit-logs?tableName=ScoreItem&recordId=${encodeURIComponent(id)}`;
+  window.location.href = `audit-logs.html?tableName=ScoreItem&recordId=${encodeURIComponent(id)}`;
 }
 
 function closeScoreItemDialog() {
@@ -224,6 +242,11 @@ function validateScoreItem(data) {
   if (!data.subCategory) return { valid: false, field: "subCategory", message: "請輸入子類別" };
   if (!Number.isInteger(data.score) || data.score <= 0) return { valid: false, field: "score", message: "分數必須是正整數" };
   return { valid: true };
+}
+
+function getStudentLabel(studentId) {
+  if (!studentId) return "所有學生";
+  return students.find((student) => student.id === studentId)?.name || "指定學生";
 }
 
 function showFormError(message) {

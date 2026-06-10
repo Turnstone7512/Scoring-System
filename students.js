@@ -192,7 +192,7 @@ async function deleteStudent(id) {
 }
 
 function openHistory(id) {
-  window.location.href = `/audit-logs?tableName=Student&recordId=${encodeURIComponent(id)}`;
+  window.location.href = `audit-logs.html?tableName=Student&recordId=${encodeURIComponent(id)}`;
 }
 
 function closeStudentDialog() {
