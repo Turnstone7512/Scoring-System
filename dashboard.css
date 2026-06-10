@@ -3,28 +3,6 @@
   gap: 18px;
 }
 
-.summary-grid {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.summary-card {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  display: grid;
-  gap: 8px;
-  padding: 18px 20px;
-}
-
-.summary-card strong {
-  color: var(--primary);
-  font-size: 2rem;
-  line-height: 1;
-}
-
 .dashboard-panel {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -176,8 +154,3 @@
   width: 10px;
 }
 
-@media (max-width: 760px) {
-  .summary-grid {
-    grid-template-columns: 1fr;
-  }
-}

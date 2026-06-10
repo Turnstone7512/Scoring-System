@@ -1,9 +1,6 @@
 const tableBody = document.querySelector("#dashboardTableBody");
 const emptyDashboard = document.querySelector("#emptyDashboard");
 const sortStatus = document.querySelector("#sortStatus");
-const studentTotal = document.querySelector("#studentTotal");
-const scoreTotal = document.querySelector("#scoreTotal");
-const highestScore = document.querySelector("#highestScore");
 const sortButtons = document.querySelectorAll("[data-sort]");
 const monthlyChart = document.querySelector("#monthlyChart");
 
@@ -75,7 +72,7 @@ function renderDashboard() {
   const pageResult = AppUI.paginate(sortedStudents, currentPage, pageSize);
   currentPage = pageResult.page;
 
-  renderSummary(filtered);
+  renderDashboardStatus();
   renderSortIndicators();
   AppUI.renderPagination(document.querySelector("#dashboardPaginationTop"), currentPage, pageResult.totalPages, (page) => {
     currentPage = page;
@@ -91,12 +88,7 @@ function renderDashboard() {
   });
 }
 
-function renderSummary(items) {
-  const totalScore = items.reduce((sum, student) => sum + Number(student.currentScore || 0), 0);
-  const maxScore = items.length ? Math.max(...items.map((student) => Number(student.currentScore || 0))) : 0;
-  studentTotal.textContent = items.length;
-  scoreTotal.textContent = totalScore;
-  highestScore.textContent = maxScore;
+function renderDashboardStatus() {
   sortStatus.textContent = `依 ${sortLabel(sortState.key)} ${sortState.direction === "asc" ? "遞增" : "遞減"}排序`;
 }
 
