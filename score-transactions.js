@@ -116,7 +116,7 @@ async function loadTransactions() {
 }
 
 function insertTransactionControls() {
-  document.querySelector(".table-wrap").insertAdjacentHTML("beforebegin", `
+  document.querySelector(".table-section .table-wrap").insertAdjacentHTML("beforebegin", `
     <div class="utility-row">
       <input id="transactionSearch" class="table-search" type="search" placeholder="搜尋學生、項目或點數" />
       <div id="transactionPagination" class="pagination"></div>
@@ -170,18 +170,19 @@ function renderV2ItemTables() {
 }
 
 function renderV2Rows(body, items) {
-  const splitIndex = Math.ceil(items.length / 2);
-  const leftItems = items.slice(0, splitIndex);
-  const rightItems = items.slice(splitIndex);
-  body.innerHTML = leftItems.map((leftItem, index) => {
-    const rightItem = rightItems[index];
-    return `
+  const rowCount = Math.ceil(items.length / 2);
+  const rows = [];
+  for (let index = 0; index < rowCount; index += 1) {
+    const leftItem = items[index];
+    const rightItem = items[index + rowCount];
+    rows.push(`
       <tr>
         ${renderV2ItemCells(leftItem)}
         ${rightItem ? renderV2ItemCells(rightItem) : renderEmptyV2ItemCells()}
       </tr>
-    `;
-  }).join("");
+    `);
+  }
+  body.innerHTML = rows.join("");
 }
 
 function renderV2ItemCells(item) {
