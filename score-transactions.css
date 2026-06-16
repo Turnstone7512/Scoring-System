@@ -79,7 +79,7 @@
 }
 
 .item-entry-table {
-  min-width: 720px;
+  min-width: 980px;
 }
 
 .transaction-table th,
@@ -90,6 +90,11 @@
   padding: 13px 14px;
   text-align: left;
   vertical-align: middle;
+}
+
+.item-entry-table th,
+.item-entry-table td {
+  padding: 7px 8px;
 }
 
 .transaction-table th,
@@ -104,19 +109,34 @@
   border-bottom: 0;
 }
 
-.item-entry-table th:last-child,
-.item-entry-table td:last-child {
-  width: 140px;
+.two-column-entry th:nth-child(3),
+.two-column-entry th:nth-child(7),
+.two-column-entry td:nth-child(3),
+.two-column-entry td:nth-child(7) {
+  width: 74px;
+}
+
+.two-column-entry th:nth-child(4),
+.two-column-entry th:nth-child(8),
+.two-column-entry td:nth-child(4),
+.two-column-entry td:nth-child(8) {
+  width: 86px;
+}
+
+.two-column-entry th:nth-child(5),
+.two-column-entry td:nth-child(5) {
+  border-left: 2px solid var(--line);
 }
 
 .quantity-input {
-  max-width: 110px;
+  max-width: 72px;
+  padding: 6px 8px;
 }
 
 .item-scope {
   color: var(--muted);
   display: inline-block;
-  font-size: 0.86rem;
+  font-size: 0.78rem;
   font-weight: 700;
   margin-left: 8px;
 }
@@ -124,8 +144,13 @@
 .type-pill {
   border-radius: 999px;
   display: inline-flex;
+  font-size: 0.84rem;
   font-weight: 800;
-  padding: 5px 10px;
+  padding: 3px 8px;
+}
+
+.empty-cell {
+  background: #fbfdff;
 }
 
 .type-pill.reward {

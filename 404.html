@@ -6,6 +6,7 @@
     <title>頁面轉址中</title>
     <script>
       const routes = {
+        "": "index.html",
         "/": "index.html",
         "/students": "students.html",
         "/score-items": "score-items.html",
@@ -13,13 +14,21 @@
         "/reports/score-details": "score-details-report.html",
         "/audit-logs": "audit-logs.html",
       };
-      const target = routes[window.location.pathname];
+
+      const projectBase = "/Scoring-System";
+      const pathname = window.location.pathname;
+      const routePath = pathname.startsWith(projectBase)
+        ? pathname.slice(projectBase.length) || "/"
+        : pathname;
+      const target = routes[routePath];
+
       if (target) {
-        window.location.replace(`${target}${window.location.search}${window.location.hash}`);
+        const base = pathname.startsWith(projectBase) ? `${projectBase}/` : "";
+        window.location.replace(`${base}${target}${window.location.search}${window.location.hash}`);
       }
     </script>
   </head>
   <body>
-    <p>頁面轉址中，若未自動轉址，請回到 <a href="index.html">Dashboard</a>。</p>
+    <p>頁面轉址中，若沒有自動轉址，請回到 <a href="index.html">Dashboard</a>。</p>
   </body>
 </html>

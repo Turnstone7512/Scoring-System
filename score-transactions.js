@@ -67,8 +67,8 @@ fields.studentId.addEventListener("change", () => {
 });
 fields.scoreItemId.addEventListener("change", fillScoreFromSelectedItem);
 fields.v2StudentId.addEventListener("change", renderV2ItemTables);
-v2.saveRewardButton.addEventListener("click", () => saveV2Transactions("REWARD"));
-v2.savePenaltyButton.addEventListener("click", () => saveV2Transactions("PENALTY"));
+v2.saveRewardButton.addEventListener("click", saveAllV2Transactions);
+v2.savePenaltyButton.addEventListener("click", saveAllV2Transactions);
 
 init();
 
@@ -170,17 +170,32 @@ function renderV2ItemTables() {
 }
 
 function renderV2Rows(body, items) {
-  body.innerHTML = items.map((item) => {
-    const scope = item.studentId ? "個別" : "共用";
+  const splitIndex = Math.ceil(items.length / 2);
+  const leftItems = items.slice(0, splitIndex);
+  const rightItems = items.slice(splitIndex);
+  body.innerHTML = leftItems.map((leftItem, index) => {
+    const rightItem = rightItems[index];
     return `
-      <tr data-item-id="${item.id}">
-        <td><span class="type-pill ${getTypeClass(item.type)}">${getTypeLabel(item.type)}</span></td>
-        <td><strong>${escapeHtml(getItemName(item))}</strong><span class="item-scope">${scope}</span></td>
-        <td>${Math.abs(Number(item.score || 0))}</td>
-        <td><input class="quantity-input" type="number" min="0" step="1" inputmode="numeric" data-quantity value="" placeholder="0" /></td>
+      <tr>
+        ${renderV2ItemCells(leftItem)}
+        ${rightItem ? renderV2ItemCells(rightItem) : renderEmptyV2ItemCells()}
       </tr>
     `;
   }).join("");
+}
+
+function renderV2ItemCells(item) {
+  const scope = item.studentId ? "個別" : "共用";
+  return `
+    <td data-v2-item="${item.id}"><span class="type-pill ${getTypeClass(item.type)}">${getTypeLabel(item.type)}</span></td>
+    <td><strong>${escapeHtml(getItemName(item))}</strong><span class="item-scope">${scope}</span></td>
+    <td>${Math.abs(Number(item.score || 0))}</td>
+    <td><input class="quantity-input" type="number" min="0" step="1" inputmode="numeric" data-quantity value="" placeholder="0" /></td>
+  `;
+}
+
+function renderEmptyV2ItemCells() {
+  return `<td class="empty-cell"></td><td class="empty-cell"></td><td class="empty-cell"></td><td class="empty-cell"></td>`;
 }
 
 function renderTransactions() {
@@ -228,29 +243,26 @@ function renderTransactionRow(transaction) {
   `;
 }
 
-async function saveV2Transactions(type) {
+async function saveAllV2Transactions() {
   hideV2FormError();
   const studentId = fields.v2StudentId.value;
   const transactionDate = fields.v2TransactionDate.value;
   if (!studentId) return showV2FormError("請選擇學生");
   if (!isValidDate(transactionDate)) return showV2FormError("請選擇生效日期");
 
-  const body = type === "REWARD" ? v2.rewardBody : v2.penaltyBody;
-  const rows = [...body.querySelectorAll("tr")].map((row) => {
-    const item = scoreItems.find((entry) => entry.id === row.dataset.itemId);
-    const rawQuantity = row.querySelector("[data-quantity]").value.trim();
-    const quantity = rawQuantity === "" ? 0 : Number(rawQuantity);
-    return { item, rawQuantity, quantity };
-  });
-
+  const rows = [
+    ...collectV2Rows(v2.rewardBody, "REWARD"),
+    ...collectV2Rows(v2.penaltyBody, "PENALTY"),
+  ];
   const invalid = rows.find(({ rawQuantity, quantity }) => rawQuantity !== "" && (!Number.isInteger(quantity) || quantity < 0));
   if (invalid) return showV2FormError("數量必須是 0 或正整數");
+
   const payloads = rows.filter(({ item, quantity }) => item && quantity > 0);
   if (!payloads.length) return showV2FormError("請至少輸入一個數量");
 
-  AppUI.showLoading(`儲存${getTypeLabel(type)}...`);
+  AppUI.showLoading("儲存點數異動...");
   try {
-    for (const { item, quantity } of payloads) {
+    for (const { item, quantity, type } of payloads) {
       await requestJson("/api/score-transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -263,8 +275,8 @@ async function saveV2Transactions(type) {
         }),
       });
     }
-    clearV2Quantities(type);
-    AppUI.toast(`已新增 ${payloads.length} 筆${getTypeLabel(type)}`);
+    clearAllV2Quantities();
+    AppUI.toast(`已新增 ${payloads.length} 筆點數異動`);
     await Promise.all([loadStudents(), loadTransactions()]);
   } catch (error) {
     showV2FormError(error.message);
@@ -272,6 +284,18 @@ async function saveV2Transactions(type) {
   } finally {
     AppUI.hideLoading();
   }
+}
+
+function collectV2Rows(body, type) {
+  return [...body.querySelectorAll("[data-v2-item]")].map((cell) => {
+    const item = scoreItems.find((entry) => entry.id === cell.dataset.v2Item);
+    const row = cell.parentElement;
+    const cellIndex = [...row.children].indexOf(cell);
+    const quantityInput = row.children[cellIndex + 3]?.querySelector("[data-quantity]");
+    const rawQuantity = quantityInput?.value.trim() || "";
+    const quantity = rawQuantity === "" ? 0 : Number(rawQuantity);
+    return { item, rawQuantity, quantity, type };
+  });
 }
 
 async function saveTransaction(event) {
@@ -457,9 +481,11 @@ function getTypeClass(type) {
   return type === "REWARD" ? "reward" : "penalty";
 }
 
-function clearV2Quantities(type) {
-  const body = type === "REWARD" ? v2.rewardBody : v2.penaltyBody;
-  body.querySelectorAll("[data-quantity]").forEach((input) => {
+function clearAllV2Quantities() {
+  v2.rewardBody.querySelectorAll("[data-quantity]").forEach((input) => {
+    input.value = "";
+  });
+  v2.penaltyBody.querySelectorAll("[data-quantity]").forEach((input) => {
     input.value = "";
   });
 }
