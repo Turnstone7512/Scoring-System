@@ -73,6 +73,7 @@ v2.savePenaltyButton.addEventListener("click", saveAllV2Transactions);
 init();
 
 async function init() {
+  normalizeVisibleLabels();
   fields.v2TransactionDate.value = toDateInputValue(new Date());
   fields.transactionDate.value = toDateInputValue(new Date());
   fields.settlementDate.value = toDateInputValue(new Date());
@@ -81,6 +82,11 @@ async function init() {
   resetTransactionForm();
   renderV2ItemTables();
   await loadTransactions();
+}
+
+function normalizeVisibleLabels() {
+  const title = document.querySelector(".transaction-v2 h2");
+  if (title) title.textContent = "點數異動";
 }
 
 async function loadStudents() {
