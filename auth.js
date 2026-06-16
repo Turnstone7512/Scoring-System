@@ -41,7 +41,7 @@
     document.querySelectorAll('a[href="/score-items"], a[href="score-items.html"]').forEach((link) => {
       link.classList.add("admin-only");
       if (link.getAttribute("href") === "/score-items") {
-        link.textContent = "獎懲項目異動權限";
+        link.textContent = "獎懲項目異動";
       }
     });
   }

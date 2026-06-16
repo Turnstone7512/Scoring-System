@@ -9,6 +9,7 @@ const emptyTransactions = document.querySelector("#emptyTransactions");
 const transactionCount = document.querySelector("#transactionCount");
 const formError = document.querySelector("#formError");
 const settlementError = document.querySelector("#settlementError");
+const v2FormError = document.querySelector("#v2FormError");
 
 const fields = {
   transactionId: document.querySelector("#transactionId"),
@@ -18,11 +19,25 @@ const fields = {
   studentId: document.querySelector("#studentId"),
   type: document.querySelector("#type"),
   scoreItemId: document.querySelector("#scoreItemId"),
+  quantity: document.querySelector("#quantity"),
   scoreChange: document.querySelector("#scoreChange"),
   transactionDate: document.querySelector("#transactionDate"),
   settlementStudentId: document.querySelector("#settlementStudentId"),
   settlementScore: document.querySelector("#settlementScore"),
   settlementDate: document.querySelector("#settlementDate"),
+  v2StudentId: document.querySelector("#v2StudentId"),
+  v2TransactionDate: document.querySelector("#v2TransactionDate"),
+};
+
+const v2 = {
+  rewardBody: document.querySelector("#rewardItemsBody"),
+  penaltyBody: document.querySelector("#penaltyItemsBody"),
+  emptyReward: document.querySelector("#emptyRewardItems"),
+  emptyPenalty: document.querySelector("#emptyPenaltyItems"),
+  rewardCount: document.querySelector("#rewardItemCount"),
+  penaltyCount: document.querySelector("#penaltyItemCount"),
+  saveRewardButton: document.querySelector("#saveRewardButton"),
+  savePenaltyButton: document.querySelector("#savePenaltyButton"),
 };
 
 let students = [];
@@ -51,13 +66,20 @@ fields.studentId.addEventListener("change", () => {
   fillScoreFromSelectedItem();
 });
 fields.scoreItemId.addEventListener("change", fillScoreFromSelectedItem);
+fields.v2StudentId.addEventListener("change", renderV2ItemTables);
+v2.saveRewardButton.addEventListener("click", () => saveV2Transactions("REWARD"));
+v2.savePenaltyButton.addEventListener("click", () => saveV2Transactions("PENALTY"));
 
 init();
 
 async function init() {
+  fields.v2TransactionDate.value = toDateInputValue(new Date());
+  fields.transactionDate.value = toDateInputValue(new Date());
+  fields.settlementDate.value = toDateInputValue(new Date());
   await Promise.all([loadStudents(), loadScoreItems()]);
   applyInitialQueryParams();
   resetTransactionForm();
+  renderV2ItemTables();
   await loadTransactions();
 }
 
@@ -69,10 +91,11 @@ async function loadStudents() {
 async function loadScoreItems() {
   scoreItems = await requestJson("/api/score-items");
   renderScoreItemOptions();
+  renderV2ItemTables();
 }
 
 async function loadTransactions() {
-  AppUI.showLoading("載入積分異動...");
+  AppUI.showLoading("載入異動紀錄...");
   try {
     const params = new URLSearchParams();
     if (fields.searchStudentId.value) params.set("studentId", fields.searchStudentId.value);
@@ -95,7 +118,7 @@ async function loadTransactions() {
 function insertTransactionControls() {
   document.querySelector(".table-wrap").insertAdjacentHTML("beforebegin", `
     <div class="utility-row">
-      <input id="transactionSearch" class="table-search" type="search" placeholder="搜尋學生、項目或分數" />
+      <input id="transactionSearch" class="table-search" type="search" placeholder="搜尋學生、項目或點數" />
       <div id="transactionPagination" class="pagination"></div>
     </div>
   `);
@@ -108,10 +131,11 @@ function insertTransactionControls() {
 
 function renderStudentOptions() {
   const options = students
-    .map((student) => `<option value="${student.id}">${escapeHtml(student.name)}（${student.grade} 年級）</option>`)
+    .map((student) => `<option value="${student.id}">${escapeHtml(student.name)}${student.grade ? `（${student.grade}年級）` : ""}</option>`)
     .join("");
   fields.searchStudentId.innerHTML = `<option value="">全部學生</option>${options}`;
   fields.studentId.innerHTML = `<option value="">請選擇學生</option>${options}`;
+  fields.v2StudentId.innerHTML = `<option value="">請選擇學生</option>${options}`;
   fields.settlementStudentId.innerHTML = `<option value="">請選擇學生</option>${options}`;
 }
 
@@ -123,10 +147,40 @@ function renderScoreItemOptions() {
     .filter((item) => !item.studentId || item.studentId === studentId)
     .map((item) => {
       const scope = item.studentId ? "個別" : "共用";
-      return `<option value="${item.id}">[${scope}] ${escapeHtml(item.mainCategory)} - ${escapeHtml(item.subCategory)}</option>`;
+      return `<option value="${item.id}">[${scope}] ${escapeHtml(getItemName(item))}</option>`;
     })
     .join("");
-  fields.scoreItemId.innerHTML = options || `<option value="">沒有可用項目</option>`;
+  fields.scoreItemId.innerHTML = options || `<option value="">沒有可使用項目</option>`;
+}
+
+function renderV2ItemTables() {
+  const studentId = fields.v2StudentId.value;
+  const availableItems = studentId
+    ? scoreItems.filter((item) => !item.studentId || item.studentId === studentId)
+    : [];
+  const rewardItems = availableItems.filter((item) => item.type === "REWARD");
+  const penaltyItems = availableItems.filter((item) => item.type === "PENALTY");
+
+  renderV2Rows(v2.rewardBody, rewardItems);
+  renderV2Rows(v2.penaltyBody, penaltyItems);
+  v2.emptyReward.classList.toggle("hidden", rewardItems.length > 0);
+  v2.emptyPenalty.classList.toggle("hidden", penaltyItems.length > 0);
+  v2.rewardCount.textContent = `${rewardItems.length} 個項目`;
+  v2.penaltyCount.textContent = `${penaltyItems.length} 個項目`;
+}
+
+function renderV2Rows(body, items) {
+  body.innerHTML = items.map((item) => {
+    const scope = item.studentId ? "個別" : "共用";
+    return `
+      <tr data-item-id="${item.id}">
+        <td><span class="type-pill ${getTypeClass(item.type)}">${getTypeLabel(item.type)}</span></td>
+        <td><strong>${escapeHtml(getItemName(item))}</strong><span class="item-scope">${scope}</span></td>
+        <td>${Math.abs(Number(item.score || 0))}</td>
+        <td><input class="quantity-input" type="number" min="0" step="1" inputmode="numeric" data-quantity value="" placeholder="0" /></td>
+      </tr>
+    `;
+  }).join("");
 }
 
 function renderTransactions() {
@@ -174,18 +228,65 @@ function renderTransactionRow(transaction) {
   `;
 }
 
+async function saveV2Transactions(type) {
+  hideV2FormError();
+  const studentId = fields.v2StudentId.value;
+  const transactionDate = fields.v2TransactionDate.value;
+  if (!studentId) return showV2FormError("請選擇學生");
+  if (!isValidDate(transactionDate)) return showV2FormError("請選擇生效日期");
+
+  const body = type === "REWARD" ? v2.rewardBody : v2.penaltyBody;
+  const rows = [...body.querySelectorAll("tr")].map((row) => {
+    const item = scoreItems.find((entry) => entry.id === row.dataset.itemId);
+    const rawQuantity = row.querySelector("[data-quantity]").value.trim();
+    const quantity = rawQuantity === "" ? 0 : Number(rawQuantity);
+    return { item, rawQuantity, quantity };
+  });
+
+  const invalid = rows.find(({ rawQuantity, quantity }) => rawQuantity !== "" && (!Number.isInteger(quantity) || quantity < 0));
+  if (invalid) return showV2FormError("數量必須是 0 或正整數");
+  const payloads = rows.filter(({ item, quantity }) => item && quantity > 0);
+  if (!payloads.length) return showV2FormError("請至少輸入一個數量");
+
+  AppUI.showLoading(`儲存${getTypeLabel(type)}...`);
+  try {
+    for (const { item, quantity } of payloads) {
+      await requestJson("/api/score-transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId,
+          type,
+          scoreItemId: item.id,
+          scoreChange: Math.abs(Number(item.score || 0)) * quantity,
+          transactionDate,
+        }),
+      });
+    }
+    clearV2Quantities(type);
+    AppUI.toast(`已新增 ${payloads.length} 筆${getTypeLabel(type)}`);
+    await Promise.all([loadStudents(), loadTransactions()]);
+  } catch (error) {
+    showV2FormError(error.message);
+    AppUI.toast(error.message, "error");
+  } finally {
+    AppUI.hideLoading();
+  }
+}
+
 async function saveTransaction(event) {
   event.preventDefault();
   clearFieldErrors();
   hideFormError();
+  const quantity = Number(fields.quantity.value || 1);
   const payload = {
     studentId: fields.studentId.value,
     type: fields.type.value,
     scoreItemId: fields.scoreItemId.value,
-    scoreChange: Number(fields.scoreChange.value),
+    scoreChange: Number(fields.scoreChange.value) * quantity,
     transactionDate: fields.transactionDate.value,
   };
-  const validation = validateTransaction(payload);
+  const validation = validateTransaction(payload, quantity);
   if (!validation.valid) {
     showFieldError(validation.field, validation.message);
     return showFormError(validation.message);
@@ -193,7 +294,7 @@ async function saveTransaction(event) {
   const id = fields.transactionId.value;
   const url = id ? `/api/score-transactions/${id}` : "/api/score-transactions";
   const method = id ? "PUT" : "POST";
-  AppUI.showLoading("儲存積分異動...");
+  AppUI.showLoading("儲存點數異動...");
   try {
     await requestJson(url, {
       method,
@@ -201,7 +302,7 @@ async function saveTransaction(event) {
       body: JSON.stringify(payload),
     });
     resetTransactionForm();
-    AppUI.toast(id ? "積分異動已更新" : "積分異動已新增");
+    AppUI.toast(id ? "點數異動已更新" : "點數異動已新增");
     await Promise.all([loadStudents(), loadTransactions()]);
   } catch (error) {
     showFormError(error.message);
@@ -215,7 +316,7 @@ function editTransaction(id) {
   const transaction = transactions.find((entry) => entry.id === id);
   if (!transaction) return;
   if (!transaction.scoreItemId) {
-    AppUI.toast("結算異動請刪除後重新建立。", "error");
+    AppUI.toast("結餘異動請重新新增結餘調整", "error");
     return;
   }
   fields.transactionId.value = transaction.id;
@@ -223,10 +324,12 @@ function editTransaction(id) {
   fields.type.value = transaction.type;
   renderScoreItemOptions();
   fields.scoreItemId.value = transaction.scoreItemId;
+  fields.quantity.value = 1;
   fields.scoreChange.value = Math.abs(transaction.scoreChange);
   fields.transactionDate.value = toDateInputValue(transaction.transactionDate);
-  transactionFormTitle.textContent = "編輯積分異動";
+  transactionFormTitle.textContent = "點數異動 v1（編輯）";
   cancelEditButton.classList.remove("hidden");
+  document.querySelector(".transaction-v1").classList.remove("hidden");
   fields.studentId.focus();
 }
 
@@ -241,7 +344,7 @@ async function saveSettlement(event) {
   const validation = validateSettlement(payload);
   if (!validation.valid) return showSettlementError(validation.message);
 
-  AppUI.showLoading("建立結算...");
+  AppUI.showLoading("儲存結餘...");
   try {
     await requestJson("/api/score-transactions/settlement", {
       method: "POST",
@@ -250,7 +353,7 @@ async function saveSettlement(event) {
     });
     settlementForm.reset();
     fields.settlementDate.value = toDateInputValue(new Date());
-    AppUI.toast("結算已建立");
+    AppUI.toast("結餘已儲存");
     await Promise.all([loadStudents(), loadTransactions()]);
   } catch (error) {
     showSettlementError(error.message);
@@ -262,11 +365,11 @@ async function saveSettlement(event) {
 
 async function deleteTransaction(id) {
   const transaction = transactions.find((entry) => entry.id === id);
-  if (!transaction || !confirm("確定要刪除這筆積分異動嗎？")) return;
-  AppUI.showLoading("刪除積分異動...");
+  if (!transaction || !confirm("確定要刪除此筆點數異動？")) return;
+  AppUI.showLoading("刪除點數異動...");
   try {
     await requestJson(`/api/score-transactions/${id}`, { method: "DELETE" });
-    AppUI.toast("積分異動已刪除");
+    AppUI.toast("點數異動已刪除");
     await Promise.all([loadStudents(), loadTransactions()]);
   } catch (error) {
     AppUI.toast(error.message, "error");
@@ -282,17 +385,19 @@ function openHistory(id) {
 function fillScoreFromSelectedItem() {
   const item = scoreItems.find((entry) => entry.id === fields.scoreItemId.value);
   fields.scoreChange.value = item ? Math.abs(item.score) : "";
+  fields.quantity.value = fields.quantity.value || 1;
 }
 
 function resetTransactionForm() {
   transactionForm.reset();
   fields.transactionId.value = "";
   fields.type.value = "REWARD";
+  fields.quantity.value = 1;
   renderScoreItemOptions();
   fillScoreFromSelectedItem();
   fields.transactionDate.value = toDateInputValue(new Date());
   fields.settlementDate.value = fields.settlementDate.value || toDateInputValue(new Date());
-  transactionFormTitle.textContent = "新增積分異動";
+  transactionFormTitle.textContent = "點數異動 v1";
   cancelEditButton.classList.add("hidden");
   hideFormError();
 }
@@ -311,31 +416,35 @@ function resetSearch() {
 function applyInitialQueryParams() {
   const params = new URLSearchParams(window.location.search);
   const studentId = params.get("studentId");
-  if (studentId) fields.searchStudentId.value = studentId;
+  if (studentId) {
+    fields.searchStudentId.value = studentId;
+    fields.v2StudentId.value = studentId;
+  }
 }
 
-function validateTransaction(data) {
+function validateTransaction(data, quantity) {
   if (!data.studentId) return { valid: false, field: "studentId", message: "請選擇學生" };
   if (!data.scoreItemId) return { valid: false, field: "scoreItemId", message: "請選擇項目" };
-  if (!Number.isInteger(data.scoreChange) || data.scoreChange <= 0) return { valid: false, field: "scoreChange", message: "分數必須是正整數" };
-  if (!data.transactionDate || Number.isNaN(new Date(data.transactionDate).getTime())) {
-    return { valid: false, field: "transactionDate", message: "請選擇有效的生效日期" };
-  }
+  if (!Number.isInteger(quantity) || quantity <= 0) return { valid: false, field: "quantity", message: "數量必須是正整數" };
+  if (!Number.isInteger(data.scoreChange) || data.scoreChange <= 0) return { valid: false, field: "scoreChange", message: "點數必須是正整數" };
+  if (!isValidDate(data.transactionDate)) return { valid: false, field: "transactionDate", message: "請選擇生效日期" };
   return { valid: true };
 }
 
 function validateSettlement(data) {
   if (!data.studentId) return { valid: false, message: "請選擇學生" };
   if (!Number.isInteger(data.targetScore)) return { valid: false, message: "結餘點數必須是整數" };
-  if (!data.transactionDate || Number.isNaN(new Date(data.transactionDate).getTime())) {
-    return { valid: false, message: "請選擇有效的生效日期" };
-  }
+  if (!isValidDate(data.transactionDate)) return { valid: false, message: "請選擇生效日期" };
   return { valid: true };
 }
 
 function getTransactionItemLabel(transaction) {
-  if (transaction.scoreItem) return `${transaction.scoreItem.mainCategory} - ${transaction.scoreItem.subCategory}`;
-  return "結算 - 結餘調整";
+  if (transaction.scoreItem) return getItemName(transaction.scoreItem);
+  return "結餘 - 結餘調整";
+}
+
+function getItemName(item) {
+  return `${item.mainCategory} - ${item.subCategory}`;
 }
 
 function getTypeLabel(type) {
@@ -346,6 +455,23 @@ function getTypeLabel(type) {
 function getTypeClass(type) {
   if (type === "SETTLEMENT") return "settlement";
   return type === "REWARD" ? "reward" : "penalty";
+}
+
+function clearV2Quantities(type) {
+  const body = type === "REWARD" ? v2.rewardBody : v2.penaltyBody;
+  body.querySelectorAll("[data-quantity]").forEach((input) => {
+    input.value = "";
+  });
+}
+
+function showV2FormError(message) {
+  v2FormError.textContent = message;
+  v2FormError.classList.remove("hidden");
+}
+
+function hideV2FormError() {
+  v2FormError.textContent = "";
+  v2FormError.classList.add("hidden");
 }
 
 function showFormError(message) {
@@ -390,18 +516,15 @@ function formatDate(value) {
   return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(value));
 }
 
-function toDateTimeLocal(value) {
-  const date = new Date(value);
-  const offset = date.getTimezoneOffset();
-  const local = new Date(date.getTime() - offset * 60 * 1000);
-  return local.toISOString().slice(0, 16);
-}
-
 function toDateInputValue(value) {
   const date = new Date(value);
   const offset = date.getTimezoneOffset();
   const local = new Date(date.getTime() - offset * 60 * 1000);
   return local.toISOString().slice(0, 10);
+}
+
+function isValidDate(value) {
+  return Boolean(value) && !Number.isNaN(new Date(value).getTime());
 }
 
 function escapeHtml(value) {

@@ -59,6 +59,9 @@ create index if not exists score_transactions_student_id_idx
 create index if not exists score_transactions_transaction_date_idx
   on public.score_transactions (transaction_date desc);
 
+alter table public.score_items
+  add column if not exists student_id uuid references public.students(id);
+
 create index if not exists score_items_student_id_idx
   on public.score_items (student_id);
 
@@ -370,3 +373,5 @@ begin
   end loop;
 end;
 $$;
+
+notify pgrst, 'reload schema';

@@ -9,24 +9,63 @@
   </head>
   <body class="theme-score-transactions">
     <header class="app-header">
-      <div><h1>點數異動</h1><p>新增、編輯與查詢學生加扣點紀錄。</p></div>
+      <div><h1>點數異動</h1><p>依學生與生效日期登錄獎勵、懲罰或結餘調整。</p></div>
       <div class="header-actions">
         <a class="secondary-link" href="index.html">Dashboard</a>
         <a class="secondary-link" href="students.html">學生管理</a>
-        <a class="secondary-link admin-only" href="score-items.html">獎懲項目異動權限</a>
+        <a class="secondary-link admin-only" href="score-items.html">獎懲項目異動</a>
         <a class="secondary-link" href="score-details-report.html">點數明細報表</a>
         <a class="secondary-link" href="audit-logs.html">異動紀錄</a>
       </div>
     </header>
     <main class="transactions-page">
-      <section class="entry-form">
-        <h2 id="transactionFormTitle">新增點數異動</h2>
+      <section class="entry-form transaction-v2 admin-only">
+        <div class="section-title">
+          <div>
+            <h2>點數異動 v2</h2>
+            <p class="meta">選擇生效日期與學生後，輸入各項目的數量再儲存。</p>
+          </div>
+        </div>
+        <div class="form-grid transaction-context">
+          <label>生效日期<input id="v2TransactionDate" type="date" required /></label>
+          <label>學生<select id="v2StudentId" required></select></label>
+        </div>
+        <p id="v2FormError" class="error-text hidden"></p>
+
+        <section class="transaction-block">
+          <div class="section-title compact"><h3>獎勵項目</h3><p id="rewardItemCount" class="meta"></p></div>
+          <div class="table-wrap" aria-live="polite">
+            <table class="item-entry-table">
+              <thead><tr><th>類型</th><th>項目</th><th>點數</th><th>數量</th></tr></thead>
+              <tbody id="rewardItemsBody"></tbody>
+            </table>
+            <div id="emptyRewardItems" class="empty-state hidden">此學生沒有可使用的獎勵項目</div>
+          </div>
+          <div class="form-actions"><button id="saveRewardButton" type="button">儲存獎勵</button></div>
+        </section>
+
+        <section class="transaction-block">
+          <div class="section-title compact"><h3>懲罰項目</h3><p id="penaltyItemCount" class="meta"></p></div>
+          <div class="table-wrap" aria-live="polite">
+            <table class="item-entry-table">
+              <thead><tr><th>類型</th><th>項目</th><th>點數</th><th>數量</th></tr></thead>
+              <tbody id="penaltyItemsBody"></tbody>
+            </table>
+            <div id="emptyPenaltyItems" class="empty-state hidden">此學生沒有可使用的懲罰項目</div>
+          </div>
+          <div class="form-actions"><button id="savePenaltyButton" type="button">儲存懲罰</button></div>
+        </section>
+      </section>
+
+      <section class="entry-form transaction-v1 admin-only hidden">
+        <h2 id="transactionFormTitle">點數異動 v1</h2>
         <form id="transactionForm">
           <input id="transactionId" type="hidden" />
           <div class="form-grid">
             <label>學生<select id="studentId" required></select></label>
             <label>類型<select id="type" required><option value="REWARD">獎勵</option><option value="PENALTY">懲罰</option></select></label>
             <label>項目<select id="scoreItemId" required></select></label>
+            <label>數量<input id="quantity" type="number" min="1" step="1" value="1" required /></label>
             <label>點數<input id="scoreChange" type="number" min="1" step="1" required /></label>
             <label>生效日期<input id="transactionDate" type="date" required /></label>
           </div>
@@ -34,31 +73,37 @@
           <div class="form-actions"><button type="submit">儲存</button><button id="cancelEditButton" class="secondary-button hidden" type="button">取消編輯</button></div>
         </form>
       </section>
-      <section class="entry-form">
+
+      <section class="entry-form admin-only">
         <h2>結餘調整</h2>
         <form id="settlementForm">
           <div class="form-grid">
             <label>學生<select id="settlementStudentId" required></select></label>
-            <label>結餘後目前點數<input id="settlementScore" type="number" step="1" required /></label>
+            <label>結餘後點數<input id="settlementScore" type="number" step="1" required /></label>
             <label>生效日期<input id="settlementDate" type="date" required /></label>
           </div>
           <p id="settlementError" class="error-text hidden"></p>
-          <div class="form-actions"><button type="submit">建立結算</button></div>
+          <div class="form-actions"><button type="submit">儲存結餘</button></div>
         </form>
       </section>
+
       <section class="search-panel">
-        <h2>查詢條件</h2>
+        <h2>異動紀錄查詢</h2>
         <form id="searchForm" class="form-grid">
           <label>學生<select id="searchStudentId"></select></label>
           <label>起始日期<input id="dateFrom" type="date" /></label>
           <label>結束日期<input id="dateTo" type="date" /></label>
-          <div class="form-actions"><button type="submit">查詢</button><button id="resetSearchButton" class="secondary-button" type="button">清除</button></div>
+          <div class="form-actions"><button type="submit">查詢</button><button id="resetSearchButton" class="secondary-button" type="button">重設</button></div>
         </form>
       </section>
+
       <section class="table-section">
         <div class="section-title"><h2>異動紀錄</h2><p id="transactionCount" class="meta">載入中...</p></div>
         <div class="table-wrap" aria-live="polite">
-          <table class="transaction-table"><thead><tr><th>學生</th><th>生效日期</th><th>類型</th><th>項目</th><th>異動點數</th><th>累計點數</th><th>操作</th></tr></thead><tbody id="transactionsTableBody"></tbody></table>
+          <table class="transaction-table">
+            <thead><tr><th>學生</th><th>生效日期</th><th>類型</th><th>項目</th><th>異動點數</th><th>結餘點數</th><th>操作</th></tr></thead>
+            <tbody id="transactionsTableBody"></tbody>
+          </table>
           <div id="emptyTransactions" class="empty-state hidden">目前沒有點數異動紀錄</div>
         </div>
       </section>
