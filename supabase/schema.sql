@@ -34,6 +34,7 @@ create table if not exists public.score_items (
   sub_category text not null,
   image_url text,
   score integer not null,
+  is_pinned boolean not null default false,
   is_deleted boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -61,6 +62,9 @@ create index if not exists score_transactions_transaction_date_idx
 
 alter table public.score_items
   add column if not exists student_id uuid references public.students(id);
+
+alter table public.score_items
+  add column if not exists is_pinned boolean not null default false;
 
 create index if not exists score_items_student_id_idx
   on public.score_items (student_id);

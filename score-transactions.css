@@ -44,6 +44,46 @@
   gap: 10px;
 }
 
+.top-save-actions {
+  margin-bottom: 4px;
+}
+
+.pinned-entry {
+  display: grid;
+  gap: 8px;
+}
+
+.pinned-entry h4 {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.pinned-entry-table {
+  border-collapse: collapse;
+  min-width: 360px;
+  width: 100%;
+}
+
+.pinned-entry-table th,
+.pinned-entry-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 7px 8px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.pinned-entry-table th {
+  background: #f8fafc;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.pinned-entry-table th:last-child,
+.pinned-entry-table td:last-child {
+  width: 82px;
+}
+
 .form-grid {
   display: grid;
   gap: 14px;

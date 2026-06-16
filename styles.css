@@ -255,6 +255,16 @@ label {
   font-weight: 700;
 }
 
+.checkbox-label {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.checkbox-label input {
+  width: auto;
+}
+
 input,
 select {
   width: 100%;

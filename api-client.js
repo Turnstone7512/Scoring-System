@@ -146,7 +146,7 @@
   }
 
   async function listScoreItems(type) {
-    let path = "/score_items?select=*&is_deleted=eq.false&order=type.asc,main_category.asc,sub_category.asc";
+    let path = "/score_items?select=*&is_deleted=eq.false&order=type.asc,is_pinned.desc,main_category.asc,sub_category.asc";
     if (type) path += `&type=eq.${encodeURIComponent(type)}`;
     const rows = await api(path);
     return rows.map(mapScoreItem);
@@ -161,6 +161,7 @@
       sub_category: text(data.subCategory),
       image_url: emptyToNull(data.imageUrl),
       score: data.type === "PENALTY" ? -score : score,
+      is_pinned: Boolean(data.isPinned),
     };
     const [inserted] = await api("/score_items?select=*", {
       method: "POST",
@@ -181,6 +182,7 @@
       sub_category: text(data.subCategory),
       image_url: emptyToNull(data.imageUrl),
       score: data.type === "PENALTY" ? -score : score,
+      is_pinned: Boolean(data.isPinned),
       updated_at: new Date().toISOString(),
     };
     const [updated] = await api(`/score_items?id=eq.${encodeURIComponent(id)}&select=*`, {
@@ -428,6 +430,7 @@
       subCategory: row.sub_category,
       imageUrl: row.image_url,
       score: row.score,
+      isPinned: Boolean(row.is_pinned),
       isDeleted: row.is_deleted,
       createdAt: row.created_at,
       updatedAt: row.updated_at,

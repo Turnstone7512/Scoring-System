@@ -32,10 +32,15 @@ const fields = {
 const v2 = {
   rewardBody: document.querySelector("#rewardItemsBody"),
   penaltyBody: document.querySelector("#penaltyItemsBody"),
+  rewardPinnedBody: document.querySelector("#rewardPinnedBody"),
+  penaltyPinnedBody: document.querySelector("#penaltyPinnedBody"),
   emptyReward: document.querySelector("#emptyRewardItems"),
   emptyPenalty: document.querySelector("#emptyPenaltyItems"),
+  emptyRewardPinned: document.querySelector("#emptyRewardPinned"),
+  emptyPenaltyPinned: document.querySelector("#emptyPenaltyPinned"),
   rewardCount: document.querySelector("#rewardItemCount"),
   penaltyCount: document.querySelector("#penaltyItemCount"),
+  saveTopButton: document.querySelector("#saveTopButton"),
   saveRewardButton: document.querySelector("#saveRewardButton"),
   savePenaltyButton: document.querySelector("#savePenaltyButton"),
 };
@@ -67,6 +72,7 @@ fields.studentId.addEventListener("change", () => {
 });
 fields.scoreItemId.addEventListener("change", fillScoreFromSelectedItem);
 fields.v2StudentId.addEventListener("change", renderV2ItemTables);
+v2.saveTopButton.addEventListener("click", saveAllV2Transactions);
 v2.saveRewardButton.addEventListener("click", saveAllV2Transactions);
 v2.savePenaltyButton.addEventListener("click", saveAllV2Transactions);
 
@@ -166,13 +172,30 @@ function renderV2ItemTables() {
     : [];
   const rewardItems = availableItems.filter((item) => item.type === "REWARD");
   const penaltyItems = availableItems.filter((item) => item.type === "PENALTY");
+  const pinnedRewardItems = rewardItems.filter((item) => item.isPinned);
+  const pinnedPenaltyItems = penaltyItems.filter((item) => item.isPinned);
+  const regularRewardItems = rewardItems.filter((item) => !item.isPinned);
+  const regularPenaltyItems = penaltyItems.filter((item) => !item.isPinned);
 
-  renderV2Rows(v2.rewardBody, rewardItems);
-  renderV2Rows(v2.penaltyBody, penaltyItems);
-  v2.emptyReward.classList.toggle("hidden", rewardItems.length > 0);
-  v2.emptyPenalty.classList.toggle("hidden", penaltyItems.length > 0);
+  renderPinnedRows(v2.rewardPinnedBody, pinnedRewardItems);
+  renderPinnedRows(v2.penaltyPinnedBody, pinnedPenaltyItems);
+  renderV2Rows(v2.rewardBody, regularRewardItems);
+  renderV2Rows(v2.penaltyBody, regularPenaltyItems);
+  v2.emptyRewardPinned.classList.toggle("hidden", pinnedRewardItems.length > 0);
+  v2.emptyPenaltyPinned.classList.toggle("hidden", pinnedPenaltyItems.length > 0);
+  v2.emptyReward.classList.toggle("hidden", regularRewardItems.length > 0);
+  v2.emptyPenalty.classList.toggle("hidden", regularPenaltyItems.length > 0);
   v2.rewardCount.textContent = `${rewardItems.length} 個項目`;
   v2.penaltyCount.textContent = `${penaltyItems.length} 個項目`;
+}
+
+function renderPinnedRows(body, items) {
+  body.innerHTML = items.map((item) => `
+    <tr>
+      <td data-v2-item="${item.id}"><strong>${escapeHtml(getItemName(item))}</strong><span class="item-scope">${item.studentId ? "個別" : "共用"}</span></td>
+      <td><input class="quantity-input" type="number" min="0" step="1" inputmode="numeric" data-quantity value="" placeholder="0" /></td>
+    </tr>
+  `).join("");
 }
 
 function renderV2Rows(body, items) {
@@ -258,6 +281,8 @@ async function saveAllV2Transactions() {
   if (!isValidDate(transactionDate)) return showV2FormError("請選擇生效日期");
 
   const rows = [
+    ...collectV2Rows(v2.rewardPinnedBody, "REWARD"),
+    ...collectV2Rows(v2.penaltyPinnedBody, "PENALTY"),
     ...collectV2Rows(v2.rewardBody, "REWARD"),
     ...collectV2Rows(v2.penaltyBody, "PENALTY"),
   ];
@@ -298,7 +323,8 @@ function collectV2Rows(body, type) {
     const item = scoreItems.find((entry) => entry.id === cell.dataset.v2Item);
     const row = cell.parentElement;
     const cellIndex = [...row.children].indexOf(cell);
-    const quantityInput = row.children[cellIndex + 3]?.querySelector("[data-quantity]");
+    const quantityInput = row.children[cellIndex + 3]?.querySelector("[data-quantity]")
+      || row.children[cellIndex + 1]?.querySelector("[data-quantity]");
     const rawQuantity = quantityInput?.value.trim() || "";
     const quantity = rawQuantity === "" ? 0 : Number(rawQuantity);
     return { item, rawQuantity, quantity, type };
@@ -489,6 +515,12 @@ function getTypeClass(type) {
 }
 
 function clearAllV2Quantities() {
+  v2.rewardPinnedBody.querySelectorAll("[data-quantity]").forEach((input) => {
+    input.value = "";
+  });
+  v2.penaltyPinnedBody.querySelectorAll("[data-quantity]").forEach((input) => {
+    input.value = "";
+  });
   v2.rewardBody.querySelectorAll("[data-quantity]").forEach((input) => {
     input.value = "";
   });

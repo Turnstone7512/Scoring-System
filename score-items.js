@@ -16,6 +16,7 @@ const fields = {
   subCategory: document.querySelector("#subCategory"),
   imageUrl: document.querySelector("#imageUrl"),
   score: document.querySelector("#score"),
+  isPinned: document.querySelector("#isPinned"),
 };
 
 let scoreItems = [];
@@ -123,6 +124,7 @@ function renderScoreItemRow(item) {
     <tr>
       <td><span class="type-pill ${typeClass}">${typeLabel}</span></td>
       <td>${escapeHtml(getStudentLabel(item.studentId))}</td>
+      <td>${item.isPinned ? "是" : "否"}</td>
       <td>${escapeHtml(item.mainCategory)}</td>
       <td>${escapeHtml(item.subCategory)}</td>
       <td>${item.score}</td>
@@ -144,6 +146,7 @@ function openCreateDialog() {
   fields.id.value = "";
   fields.type.value = "REWARD";
   fields.studentId.value = "";
+  fields.isPinned.checked = false;
   scoreItemFormTitle.textContent = "新增項目";
   clearFieldErrors();
   hideFormError();
@@ -162,6 +165,7 @@ function openEditDialog(id) {
   fields.subCategory.value = item.subCategory;
   fields.imageUrl.value = item.imageUrl || "";
   fields.score.value = Math.abs(item.score);
+  fields.isPinned.checked = Boolean(item.isPinned);
   scoreItemFormTitle.textContent = "編輯項目";
   clearFieldErrors();
   hideFormError();
@@ -180,6 +184,7 @@ async function saveScoreItem(event) {
     subCategory: fields.subCategory.value.trim(),
     imageUrl: fields.imageUrl.value.trim(),
     score: Number(fields.score.value),
+    isPinned: fields.isPinned.checked,
   };
   const validation = validateScoreItem(payload);
   if (!validation.valid) {
