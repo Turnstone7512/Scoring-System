@@ -72,6 +72,7 @@ fields.studentId.addEventListener("change", () => {
 });
 fields.scoreItemId.addEventListener("change", fillScoreFromSelectedItem);
 fields.v2StudentId.addEventListener("change", renderV2ItemTables);
+window.matchMedia("(max-width: 980px)").addEventListener("change", renderV2ItemTables);
 v2.saveTopButton.addEventListener("click", saveAllV2Transactions);
 v2.saveRewardButton.addEventListener("click", saveAllV2Transactions);
 v2.savePenaltyButton.addEventListener("click", saveAllV2Transactions);
@@ -199,6 +200,11 @@ function renderPinnedRows(body, items) {
 }
 
 function renderV2Rows(body, items) {
+  if (isCompactLayout()) {
+    body.innerHTML = items.map((item) => `<tr>${renderV2ItemCells(item)}</tr>`).join("");
+    return;
+  }
+
   const rowCount = Math.ceil(items.length / 2);
   const rows = [];
   for (let index = 0; index < rowCount; index += 1) {
@@ -212,6 +218,10 @@ function renderV2Rows(body, items) {
     `);
   }
   body.innerHTML = rows.join("");
+}
+
+function isCompactLayout() {
+  return window.matchMedia("(max-width: 980px)").matches;
 }
 
 function renderV2ItemCells(item) {
