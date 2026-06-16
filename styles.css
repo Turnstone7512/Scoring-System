@@ -265,6 +265,17 @@ label {
   width: auto;
 }
 
+.pinned-checkbox-label {
+  align-items: start;
+  display: grid;
+  gap: 8px;
+  width: max-content;
+}
+
+.pinned-checkbox-label input {
+  width: auto;
+}
+
 input,
 select {
   width: 100%;

@@ -430,7 +430,7 @@
       subCategory: row.sub_category,
       imageUrl: row.image_url,
       score: row.score,
-      isPinned: Boolean(row.is_pinned),
+      isPinned: row.is_pinned === true || row.is_pinned === "true" || row.isPinned === true,
       isDeleted: row.is_deleted,
       createdAt: row.created_at,
       updatedAt: row.updated_at,

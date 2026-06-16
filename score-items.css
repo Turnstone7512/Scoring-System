@@ -33,6 +33,12 @@
   width: 100%;
 }
 
+.score-item-filters {
+  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 190px) minmax(150px, 190px) minmax(130px, 160px) auto;
+}
+
 .score-item-table th,
 .score-item-table td {
   border-bottom: 1px solid var(--line);
@@ -154,5 +160,9 @@
   .toolbar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .score-item-filters {
+    grid-template-columns: 1fr;
   }
 }

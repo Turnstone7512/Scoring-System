@@ -48,6 +48,12 @@
   margin-bottom: 4px;
 }
 
+.pinned-summary {
+  display: grid;
+  gap: 12px;
+  margin: 4px 0 8px;
+}
+
 .pinned-entry {
   display: grid;
   gap: 8px;

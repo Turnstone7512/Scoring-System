@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>獎懲項目異動</title>
     <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="score-items.css?v=20260616-1610" />
+    <link rel="stylesheet" href="score-items.css?v=20260616-1625" />
   </head>
   <body class="theme-score-items">
     <header class="app-header">
@@ -37,7 +37,7 @@
         <label>子項目<input id="subCategory" name="subCategory" type="text" required maxlength="80" /></label>
         <label>圖片網址<input id="imageUrl" name="imageUrl" type="url" placeholder="https://example.com/image.jpg" /></label>
         <label>點數<input id="score" name="score" type="number" min="1" step="1" required /></label>
-        <label class="checkbox-label"><input id="isPinned" name="isPinned" type="checkbox" /> 置頂</label>
+        <label class="pinned-checkbox-label"><span>置頂</span><input id="isPinned" name="isPinned" type="checkbox" /></label>
         <p class="meta">懲罰項目請輸入正整數，系統會自動轉為扣點。</p>
         <p id="formError" class="error-text hidden"></p>
         <div class="form-actions"><button type="submit">儲存</button><button id="cancelScoreItemForm" class="secondary-button" type="button">取消</button></div>
@@ -48,6 +48,6 @@
     <script src="api-client.js"></script>
     <script src="auth.js"></script>
     <script src="ui-utils.js"></script>
-    <script src="score-items.js?v=20260616-1610"></script>
+    <script src="score-items.js?v=20260616-1625"></script>
   </body>
 </html>

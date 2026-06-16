@@ -23,8 +23,11 @@ let scoreItems = [];
 let students = [];
 let activeFilter = "ALL";
 let searchTerm = "";
+let studentFilter = "";
+let mainCategoryFilter = "";
+let pinnedFilter = "ALL";
 let currentPage = 1;
-const pageSize = 10;
+const pageSize = 50;
 
 insertScoreItemControls();
 insertImagePreview();
@@ -53,15 +56,14 @@ async function init() {
 
 async function loadStudents() {
   students = await requestJson("/api/students");
-  fields.studentId.innerHTML = `<option value="">所有學生共用</option>${students
-    .map((student) => `<option value="${student.id}">${escapeHtml(student.name)}（${escapeHtml(student.classNo || "-")}）</option>`)
-    .join("")}`;
+  renderStudentOptions();
 }
 
 async function loadScoreItems() {
   AppUI.showLoading("載入獎懲項目...");
   try {
     scoreItems = await requestJson("/api/score-items");
+    renderMainCategoryFilterOptions();
     renderScoreItems();
   } catch (error) {
     tableBody.innerHTML = "";
@@ -76,13 +78,36 @@ async function loadScoreItems() {
 
 function insertScoreItemControls() {
   document.querySelector(".tabs").insertAdjacentHTML("afterend", `
-    <div class="utility-row">
-      <input id="scoreItemSearch" class="table-search" type="search" placeholder="搜尋主類別、子類別或分數" />
+    <div class="utility-row score-item-filters">
+      <input id="scoreItemSearch" class="table-search" type="search" placeholder="搜尋主類別、子項目、學生或點數" />
+      <select id="scoreItemStudentFilter"><option value="">全部學生</option></select>
+      <select id="scoreItemMainCategoryFilter"><option value="">全部主類別</option></select>
+      <select id="scoreItemPinnedFilter">
+        <option value="ALL">全部置頂狀態</option>
+        <option value="PINNED">置頂</option>
+        <option value="UNPINNED">未置頂</option>
+      </select>
       <div id="scoreItemPagination" class="pagination"></div>
     </div>
   `);
+
   document.querySelector("#scoreItemSearch").addEventListener("input", (event) => {
     searchTerm = event.target.value.trim().toLowerCase();
+    currentPage = 1;
+    renderScoreItems();
+  });
+  document.querySelector("#scoreItemStudentFilter").addEventListener("change", (event) => {
+    studentFilter = event.target.value;
+    currentPage = 1;
+    renderScoreItems();
+  });
+  document.querySelector("#scoreItemMainCategoryFilter").addEventListener("change", (event) => {
+    mainCategoryFilter = event.target.value;
+    currentPage = 1;
+    renderScoreItems();
+  });
+  document.querySelector("#scoreItemPinnedFilter").addEventListener("change", (event) => {
+    pinnedFilter = event.target.value;
     currentPage = 1;
     renderScoreItems();
   });
@@ -92,11 +117,36 @@ function insertImagePreview() {
   fields.imageUrl.insertAdjacentHTML("afterend", `<img id="scoreItemImagePreview" class="image-preview" alt="圖片預覽" />`);
 }
 
+function renderStudentOptions() {
+  const options = students
+    .map((student) => `<option value="${student.id}">${escapeHtml(student.name)}（${escapeHtml(student.classNo || "-")}）</option>`)
+    .join("");
+  fields.studentId.innerHTML = `<option value="">所有學生共用</option>${options}`;
+  const studentFilterElement = document.querySelector("#scoreItemStudentFilter");
+  if (studentFilterElement) studentFilterElement.innerHTML = `<option value="">全部學生</option><option value="COMMON">所有學生共用</option>${options}`;
+}
+
+function renderMainCategoryFilterOptions() {
+  const categories = [...new Set(scoreItems.map((item) => item.mainCategory).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-Hant"));
+  const select = document.querySelector("#scoreItemMainCategoryFilter");
+  if (!select) return;
+  select.innerHTML = `<option value="">全部主類別</option>${categories
+    .map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`)
+    .join("")}`;
+  select.value = categories.includes(mainCategoryFilter) ? mainCategoryFilter : "";
+  mainCategoryFilter = select.value;
+}
+
 function renderScoreItems() {
   const filtered = scoreItems.filter((item) => {
     const matchType = activeFilter === "ALL" || item.type === activeFilter;
+    const matchStudent = !studentFilter
+      || (studentFilter === "COMMON" ? !item.studentId : item.studentId === studentFilter);
+    const matchMainCategory = !mainCategoryFilter || item.mainCategory === mainCategoryFilter;
+    const matchPinned = pinnedFilter === "ALL"
+      || (pinnedFilter === "PINNED" ? item.isPinned : !item.isPinned);
     const haystack = `${item.type} ${getStudentLabel(item.studentId)} ${item.mainCategory} ${item.subCategory} ${item.score}`.toLowerCase();
-    return matchType && haystack.includes(searchTerm);
+    return matchType && matchStudent && matchMainCategory && matchPinned && haystack.includes(searchTerm);
   });
   const pageResult = AppUI.paginate(filtered, currentPage, pageSize);
   currentPage = pageResult.page;
@@ -215,7 +265,7 @@ async function saveScoreItem(event) {
 
 async function deleteScoreItem(id) {
   const item = scoreItems.find((entry) => entry.id === id);
-  if (!item || !confirm(`確定要刪除「${item.mainCategory} - ${item.subCategory}」嗎？`)) return;
+  if (!item || !confirm(`確定要刪除「${item.mainCategory} - ${item.subCategory}」？`)) return;
   AppUI.showLoading("刪除項目...");
   try {
     await requestJson(`/api/score-items/${id}`, { method: "DELETE" });
@@ -243,9 +293,9 @@ function updateImagePreview() {
 }
 
 function validateScoreItem(data) {
-  if (!data.mainCategory) return { valid: false, field: "mainCategory", message: "請輸入主類別" };
-  if (!data.subCategory) return { valid: false, field: "subCategory", message: "請輸入子類別" };
-  if (!Number.isInteger(data.score) || data.score <= 0) return { valid: false, field: "score", message: "分數必須是正整數" };
+  if (!data.mainCategory) return { valid: false, field: "mainCategory", message: "請輸入主項目" };
+  if (!data.subCategory) return { valid: false, field: "subCategory", message: "請輸入子項目" };
+  if (!Number.isInteger(data.score) || data.score <= 0) return { valid: false, field: "score", message: "點數必須是正整數" };
   return { valid: true };
 }
 
