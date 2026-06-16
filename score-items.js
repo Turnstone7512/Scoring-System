@@ -161,7 +161,6 @@ function renderScoreItems() {
 
   tableBody.querySelectorAll("[data-edit]").forEach((button) => button.addEventListener("click", () => openEditDialog(button.dataset.edit)));
   tableBody.querySelectorAll("[data-delete]").forEach((button) => button.addEventListener("click", () => deleteScoreItem(button.dataset.delete)));
-  tableBody.querySelectorAll("[data-history]").forEach((button) => button.addEventListener("click", () => openHistory(button.dataset.history)));
 }
 
 function renderScoreItemRow(item) {
@@ -179,12 +178,11 @@ function renderScoreItemRow(item) {
       <td>${escapeHtml(item.subCategory)}</td>
       <td>${item.score}</td>
       <td>${image}</td>
-      <td>${formatDate(item.updatedAt)}</td>
+      <td><a class="history-link" href="audit-logs.html?tableName=ScoreItem&recordId=${encodeURIComponent(item.id)}">${formatDate(item.updatedAt)}</a></td>
       <td>
         <div class="card-actions">
           <button type="button" data-edit="${item.id}">編輯</button>
           <button class="danger-button" type="button" data-delete="${item.id}">刪除</button>
-          <button class="secondary-button" type="button" data-history="${item.id}">紀錄</button>
         </div>
       </td>
     </tr>

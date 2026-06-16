@@ -17,6 +17,34 @@ let searchTerm = "";
 let currentPage = 1;
 const pageSize = 8;
 
+const fieldLabels = {
+  type: "類型",
+  student_id: "適用學生",
+  main_category: "主項目",
+  sub_category: "子項目",
+  image_url: "圖片網址",
+  score: "點數",
+  is_pinned: "置頂",
+  is_deleted: "刪除狀態",
+  created_at: "建立時間",
+  updated_at: "最後異動時間",
+  name: "姓名",
+  grade: "年級",
+  class_no: "座號",
+  email: "Email",
+  photo_url: "照片網址",
+  current_score: "目前點數",
+  last_transaction_at: "最後點數異動",
+  student_id_transaction: "學生",
+  score_item_id: "項目",
+  score_change: "異動點數",
+  settlement_score: "結餘點數",
+  running_total_score: "異動後點數",
+  transaction_date: "生效日期",
+  display_name: "顯示名稱",
+  role: "角色",
+};
+
 insertAuditControls();
 
 searchForm.addEventListener("submit", (event) => {
@@ -73,7 +101,7 @@ async function loadAuditLogs() {
 function insertAuditControls() {
   document.querySelector("#auditList").insertAdjacentHTML("beforebegin", `
     <div class="utility-row">
-      <input id="auditKeywordSearch" class="table-search" type="search" placeholder="搜尋資料表、ID、動作或 JSON" />
+      <input id="auditKeywordSearch" class="table-search" type="search" placeholder="搜尋資料表、recordId 或異動內容" />
       <div id="auditPagination" class="pagination"></div>
     </div>
   `);
@@ -86,7 +114,7 @@ function insertAuditControls() {
 
 function renderAuditLogs() {
   const filtered = auditLogs.filter((log) => {
-    const haystack = `${log.tableName} ${log.recordId} ${log.action} ${formatJson(log.oldValue)} ${formatJson(log.newValue)}`.toLowerCase();
+    const haystack = `${log.tableName} ${log.recordId} ${log.action} ${formatAuditSearchText(log.oldValue)} ${formatAuditSearchText(log.newValue)}`.toLowerCase();
     return haystack.includes(searchTerm);
   });
   const pageResult = AppUI.paginate(filtered, currentPage, pageSize);
@@ -102,6 +130,7 @@ function renderAuditLogs() {
 }
 
 function renderAuditLogCard(log) {
+  const fieldsToRender = getAuditFields(log.oldValue, log.newValue);
   return `
     <article class="audit-card">
       <div class="audit-card-header">
@@ -111,23 +140,57 @@ function renderAuditLogCard(log) {
         </div>
         <span class="action-pill ${String(log.action).toLowerCase()}">${escapeHtml(log.action)}</span>
       </div>
-      <div class="json-grid">
-        <section class="json-block">
-          <h4>變更前 oldValue</h4>
-          <pre>${escapeHtml(formatJson(log.oldValue))}</pre>
+      <div class="change-stack">
+        <section class="change-block">
+          <h4>異動前</h4>
+          ${renderPlainTextFields(fieldsToRender, log.oldValue, log.oldValue, log.newValue)}
         </section>
-        <section class="json-block">
-          <h4>變更後 newValue</h4>
-          <pre>${escapeHtml(formatJson(log.newValue))}</pre>
+        <section class="change-block">
+          <h4>異動後</h4>
+          ${renderPlainTextFields(fieldsToRender, log.newValue, log.oldValue, log.newValue)}
         </section>
       </div>
     </article>
   `;
 }
 
-function formatJson(value) {
-  if (value === null || value === undefined) return "null";
-  return JSON.stringify(value, null, 2);
+function renderPlainTextFields(fieldsToRender, value, oldValue, newValue) {
+  if (!fieldsToRender.length) return `<p class="field-line unchanged">無資料</p>`;
+  return fieldsToRender.map((field) => {
+    const changed = normalizeValue(oldValue?.[field]) !== normalizeValue(newValue?.[field]);
+    const className = changed ? "changed" : "unchanged";
+    return `<p class="field-line ${className}"><span>${escapeHtml(getFieldLabel(field))}</span>：${escapeHtml(formatPlainValue(value?.[field]))}</p>`;
+  }).join("");
+}
+
+function getAuditFields(oldValue, newValue) {
+  const keys = new Set([
+    ...Object.keys(oldValue || {}),
+    ...Object.keys(newValue || {}),
+  ]);
+  return [...keys].filter((key) => !["id"].includes(key));
+}
+
+function getFieldLabel(field) {
+  return fieldLabels[field] || field;
+}
+
+function formatAuditSearchText(value) {
+  if (value === null || value === undefined) return "";
+  return JSON.stringify(value);
+}
+
+function normalizeValue(value) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+function formatPlainValue(value) {
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "boolean") return value ? "是" : "否";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
 }
 
 async function requestJson(url, options = {}) {
