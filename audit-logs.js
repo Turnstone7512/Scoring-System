@@ -17,7 +17,7 @@ let students = [];
 let studentNameById = new Map();
 let searchTerm = "";
 let currentPage = 1;
-const pageSize = 8;
+const pageSize = 20;
 
 const tableLabels = {
   Student: "學生資料",
@@ -103,6 +103,7 @@ function insertAuditControls() {
       <div id="auditPagination" class="pagination"></div>
     </div>
   `);
+  document.querySelector("#auditList").insertAdjacentHTML("afterend", `<div id="auditPaginationBottom" class="pagination"></div>`);
   document.querySelector("#auditKeywordSearch").addEventListener("input", (event) => {
     searchTerm = event.target.value.trim().toLowerCase();
     currentPage = 1;
@@ -122,6 +123,10 @@ function renderAuditLogs() {
   emptyAuditLogs.classList.toggle("hidden", pageResult.items.length > 0);
   auditList.innerHTML = pageResult.items.map(renderAuditLogCard).join("");
   AppUI.renderPagination(document.querySelector("#auditPagination"), currentPage, pageResult.totalPages, (page) => {
+    currentPage = page;
+    renderAuditLogs();
+  });
+  AppUI.renderPagination(document.querySelector("#auditPaginationBottom"), currentPage, pageResult.totalPages, (page) => {
     currentPage = page;
     renderAuditLogs();
   });

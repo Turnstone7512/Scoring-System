@@ -1,44 +1,44 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>點數登錄系統 Scoring System</title>
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="dashboard.css?v=20260617-0115" />
+    <title>暺?駁?蝟餌絞 Scoring System</title>
+    <link rel="stylesheet" href="styles.css?v=20260617-0140" />
+    <link rel="stylesheet" href="dashboard.css?v=20260617-0140" />
   </head>
   <body class="theme-dashboard">
     <header class="app-header">
       <div>
-        <h1>點數登錄系統 Scoring System</h1>
-        <p>查看學生目前點數、最近異動與每月點數統計。</p>
+        <h1>暺?駁?蝟餌絞 Scoring System</h1>
+        <p>?亦?摮貊??桀?暺??餈??瘥?暺蝯梯???/p>
       </div>
       <div class="header-actions">
-        <a class="secondary-link" href="score-transactions.html">點數異動</a>
-        <a class="secondary-link" href="score-details-report.html">點數明細報表</a>
-        <a class="secondary-link" href="audit-logs.html">異動紀錄</a>
-        <a class="secondary-link admin-only" href="score-items.html">獎懲項目異動</a>
-        <a class="secondary-link" href="students.html">學生管理</a>
+        <a class="secondary-link" href="score-transactions.html">暺?啣?</a>
+        <a class="secondary-link" href="score-details-report.html">暺?敦?梯”</a>
+        <a class="secondary-link" href="audit-logs.html">?啣?蝝??/a>
+        <a class="secondary-link admin-only" href="score-items.html">???啣?</a>
+        <a class="secondary-link" href="students.html">摮貊?蝞∠?</a>
       </div>
     </header>
     <main class="dashboard-page">
       <section class="dashboard-panel">
-        <div class="section-title"><div><h2>學生點數總覽</h2><p id="sortStatus" class="meta">依座號排序</p></div></div>
+        <div class="section-title"><div><h2>摮貊?暺蝮質汗</h2><p id="sortStatus" class="meta">靘漣??摨?/p></div></div>
         <div class="table-wrap" aria-live="polite">
           <table class="dashboard-table">
             <thead><tr>
-              <th><button class="sort-button" type="button" data-sort="name">學生姓名 <span data-indicator="name"></span></button></th>
-              <th><button class="sort-button" type="button" data-sort="classNo">座號 <span data-indicator="classNo"></span></button></th>
-              <th><button class="sort-button" type="button" data-sort="currentScore">目前點數 <span data-indicator="currentScore"></span></button></th>
-              <th><button class="sort-button" type="button" data-sort="lastTransactionAt">最後異動時間 <span data-indicator="lastTransactionAt"></span></button></th>
+              <th><button class="sort-button" type="button" data-sort="name">摮貊?憪? <span data-indicator="name"></span></button></th>
+              <th><button class="sort-button" type="button" data-sort="classNo">摨扯? <span data-indicator="classNo"></span></button></th>
+              <th><button class="sort-button" type="button" data-sort="currentScore">?桀?暺 <span data-indicator="currentScore"></span></button></th>
+              <th><button class="sort-button" type="button" data-sort="lastTransactionAt">?敺????<span data-indicator="lastTransactionAt"></span></button></th>
             </tr></thead>
             <tbody id="dashboardTableBody"></tbody>
           </table>
-          <div id="emptyDashboard" class="empty-state hidden">目前沒有學生資料</div>
+          <div id="emptyDashboard" class="empty-state hidden">?桀?瘝?摮貊?鞈?</div>
         </div>
       </section>
       <section class="dashboard-panel">
-        <div class="section-title"><div><h2>每月點數統計</h2><p class="meta">X 軸為月份，Y 軸為每月最後一天點數。</p></div></div>
+        <div class="section-title"><div><h2>瘥?暺蝯梯?</h2><p class="meta">X 頠貊?遢嚗 頠貊瘥??敺?憭拚??詻?/p></div></div>
         <div id="monthlyChart" class="monthly-chart" aria-live="polite"></div>
       </section>
     </main>
@@ -47,6 +47,7 @@
     <script src="api-client.js?v=20260617-0045"></script>
     <script src="auth.js"></script>
     <script src="ui-utils.js"></script>
-    <script src="dashboard.js?v=20260617-0115"></script>
+    <script src="dashboard.js?v=20260617-0140"></script>
   </body>
 </html>
+

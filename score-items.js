@@ -28,9 +28,11 @@ let mainCategoryFilter = "";
 let pinnedFilter = "ALL";
 let currentPage = 1;
 const pageSize = 50;
+let sortState = { key: "updatedAt", direction: "desc" };
 
 insertScoreItemControls();
 insertImagePreview();
+setupScoreItemSortHeaders();
 
 addScoreItemButton.addEventListener("click", openCreateDialog);
 scoreItemForm.addEventListener("submit", saveScoreItem);
@@ -91,6 +93,7 @@ function insertScoreItemControls() {
       <div id="scoreItemPagination" class="pagination"></div>
     </div>
   `);
+  document.querySelector(".score-items-page .table-wrap").insertAdjacentHTML("afterend", `<div id="scoreItemPaginationBottom" class="pagination"></div>`);
 
   document.querySelector("#scoreItemSearch").addEventListener("input", (event) => {
     searchTerm = event.target.value.trim().toLowerCase();
@@ -149,7 +152,8 @@ function renderScoreItems() {
     const haystack = `${item.type} ${getStudentLabel(item.studentId)} ${item.mainCategory} ${item.subCategory} ${item.score}`.toLowerCase();
     return matchType && matchStudent && matchMainCategory && matchPinned && haystack.includes(searchTerm);
   });
-  const pageResult = AppUI.paginate(filtered, currentPage, pageSize);
+  const sortedItems = [...filtered].sort(compareScoreItems);
+  const pageResult = AppUI.paginate(sortedItems, currentPage, pageSize);
   currentPage = pageResult.page;
 
   scoreItemCount.textContent = `共 ${filtered.length} 個項目`;
@@ -159,6 +163,11 @@ function renderScoreItems() {
     currentPage = page;
     renderScoreItems();
   });
+  AppUI.renderPagination(document.querySelector("#scoreItemPaginationBottom"), currentPage, pageResult.totalPages, (page) => {
+    currentPage = page;
+    renderScoreItems();
+  });
+  renderScoreItemSortIndicators();
 
   tableBody.querySelectorAll("[data-edit]").forEach((button) => button.addEventListener("click", () => openEditDialog(button.dataset.edit)));
   tableBody.querySelectorAll("[data-delete]").forEach((button) => button.addEventListener("click", () => deleteScoreItem(button.dataset.delete)));
@@ -185,6 +194,61 @@ function renderScoreItemRow(item) {
       </td>
     </tr>
   `;
+}
+
+function setupScoreItemSortHeaders() {
+  const headers = document.querySelectorAll(".score-item-table thead th");
+  const columns = [
+    ["type", "類型"],
+    ["student", "適用學生"],
+    ["isPinned", "置頂"],
+    ["item", "項目"],
+    ["score", "點數"],
+    ["image", "圖片"],
+    ["updatedAt", "最後異動"],
+  ];
+  columns.forEach(([key, label], index) => {
+    const header = headers[index];
+    if (!header) return;
+    header.innerHTML = `<button class="sort-button" type="button" data-score-item-sort="${key}">${label} <span data-score-item-indicator="${key}"></span></button>`;
+  });
+  document.querySelectorAll("[data-score-item-sort]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.scoreItemSort;
+      sortState = {
+        key,
+        direction: sortState.key === key && sortState.direction === "desc" ? "asc" : "desc",
+      };
+      currentPage = 1;
+      renderScoreItems();
+    });
+  });
+}
+
+function compareScoreItems(a, b) {
+  const direction = sortState.direction === "asc" ? 1 : -1;
+  const aValue = getScoreItemSortValue(a, sortState.key);
+  const bValue = getScoreItemSortValue(b, sortState.key);
+  if (typeof aValue === "number" && typeof bValue === "number") return (aValue - bValue) * direction;
+  return String(aValue).localeCompare(String(bValue), "zh-Hant", { numeric: true, sensitivity: "base" }) * direction;
+}
+
+function getScoreItemSortValue(item, key) {
+  if (key === "score") return Math.abs(Number(item.score || 0));
+  if (key === "isPinned") return item.isPinned ? 1 : 0;
+  if (key === "updatedAt") return new Date(item.updatedAt || item.createdAt || 0).getTime();
+  if (key === "student") return getStudentLabel(item.studentId);
+  if (key === "item") return getItemName(item);
+  if (key === "image") return item.imageUrl ? 1 : 0;
+  return item[key] || "";
+}
+
+function renderScoreItemSortIndicators() {
+  document.querySelectorAll("[data-score-item-indicator]").forEach((indicator) => {
+    indicator.textContent = indicator.dataset.scoreItemIndicator === sortState.key
+      ? (sortState.direction === "asc" ? "↑" : "↓")
+      : "";
+  });
 }
 
 function openCreateDialog() {

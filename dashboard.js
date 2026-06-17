@@ -59,6 +59,7 @@ function insertDashboardControls() {
       <div id="dashboardPaginationTop" class="pagination"></div>
     </div>
   `);
+  document.querySelector(".dashboard-panel .table-wrap").insertAdjacentHTML("afterend", `<div id="dashboardPaginationBottom" class="pagination"></div>`);
   document.querySelector("#dashboardSearch").addEventListener("input", (event) => {
     searchTerm = event.target.value.trim().toLowerCase();
     currentPage = 1;
@@ -75,6 +76,10 @@ function renderDashboard() {
   renderDashboardStatus();
   renderSortIndicators();
   AppUI.renderPagination(document.querySelector("#dashboardPaginationTop"), currentPage, pageResult.totalPages, (page) => {
+    currentPage = page;
+    renderDashboard();
+  });
+  AppUI.renderPagination(document.querySelector("#dashboardPaginationBottom"), currentPage, pageResult.totalPages, (page) => {
     currentPage = page;
     renderDashboard();
   });
@@ -245,10 +250,27 @@ function findAxisBreak(minValue, maxValue) {
 }
 
 function renderAxisBreak(y, axisX, rightX) {
+  const startX = axisX;
+  const endX = rightX;
+  const upperWave = makeWavePath(startX, endX, y - 6);
+  const lowerWave = makeWavePath(startX, endX, y + 6);
   return `
-    <path class="chart-axis-break" d="M ${axisX - 7} ${y - 7} L ${axisX + 7} ${y - 1} L ${axisX - 7} ${y + 5} L ${axisX + 7} ${y + 11}"></path>
-    <line class="chart-break-guide" x1="${axisX + 18}" y1="${y}" x2="${rightX}" y2="${y}"></line>
+    <path class="chart-axis-break" d="${upperWave}"></path>
+    <path class="chart-axis-break" d="${lowerWave}"></path>
   `;
+}
+
+function makeWavePath(startX, endX, y) {
+  const amplitude = 4;
+  const segmentWidth = 18;
+  let path = `M ${startX} ${y}`;
+  for (let x = startX; x < endX; x += segmentWidth) {
+    const nextX = Math.min(x + segmentWidth, endX);
+    const midX = x + (nextX - x) / 2;
+    const controlY = y + (Math.floor((x - startX) / segmentWidth) % 2 === 0 ? -amplitude : amplitude);
+    path += ` Q ${midX} ${controlY} ${nextX} ${y}`;
+  }
+  return path;
 }
 
 function makeTicksForScale(scale, minValue, maxValue) {

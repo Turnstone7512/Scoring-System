@@ -20,9 +20,11 @@ let students = [];
 let searchTerm = "";
 let currentPage = 1;
 const pageSize = 10;
+let sortState = { key: "updatedAt", direction: "desc" };
 
 insertStudentControls();
 insertPhotoPreview();
+setupStudentSortHeaders();
 
 addStudentButton.addEventListener("click", openCreateDialog);
 studentForm.addEventListener("submit", saveStudent);
@@ -55,6 +57,7 @@ function insertStudentControls() {
       <div id="studentPagination" class="pagination"></div>
     </div>
   `);
+  document.querySelector(".students-page .table-wrap").insertAdjacentHTML("afterend", `<div id="studentPaginationBottom" class="pagination"></div>`);
   document.querySelector("#studentSearch").addEventListener("input", (event) => {
     searchTerm = event.target.value.trim().toLowerCase();
     currentPage = 1;
@@ -71,7 +74,8 @@ function renderStudents() {
     const haystack = `${student.name || ""} ${student.grade || ""} ${student.classNo || ""} ${student.email || ""}`.toLowerCase();
     return haystack.includes(searchTerm);
   });
-  const pageResult = AppUI.paginate(filtered, currentPage, pageSize);
+  const sortedStudents = [...filtered].sort(compareStudents);
+  const pageResult = AppUI.paginate(sortedStudents, currentPage, pageSize);
   currentPage = pageResult.page;
 
   studentCount.textContent = `共 ${filtered.length} 位學生`;
@@ -81,6 +85,11 @@ function renderStudents() {
     currentPage = page;
     renderStudents();
   });
+  AppUI.renderPagination(document.querySelector("#studentPaginationBottom"), currentPage, pageResult.totalPages, (page) => {
+    currentPage = page;
+    renderStudents();
+  });
+  renderStudentSortIndicators();
 
   tableBody.querySelectorAll("[data-edit]").forEach((button) => button.addEventListener("click", () => openEditDialog(button.dataset.edit)));
   tableBody.querySelectorAll("[data-delete]").forEach((button) => button.addEventListener("click", () => deleteStudent(button.dataset.delete)));
@@ -109,6 +118,56 @@ function renderStudentRow(student) {
       </td>
     </tr>
   `;
+}
+
+function setupStudentSortHeaders() {
+  const headers = document.querySelectorAll(".student-table thead th");
+  const columns = [
+    ["name", "學生姓名"],
+    ["grade", "年級"],
+    ["classNo", "座號"],
+    ["email", "Email"],
+    ["currentScore", "目前點數"],
+    ["updatedAt", "最後異動時間"],
+  ];
+  columns.forEach(([key, label], index) => {
+    const header = headers[index];
+    if (!header) return;
+    header.innerHTML = `<button class="sort-button" type="button" data-student-sort="${key}">${label} <span data-student-indicator="${key}"></span></button>`;
+  });
+  document.querySelectorAll("[data-student-sort]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.studentSort;
+      sortState = {
+        key,
+        direction: sortState.key === key && sortState.direction === "desc" ? "asc" : "desc",
+      };
+      currentPage = 1;
+      renderStudents();
+    });
+  });
+}
+
+function compareStudents(a, b) {
+  const direction = sortState.direction === "asc" ? 1 : -1;
+  const aValue = getStudentSortValue(a, sortState.key);
+  const bValue = getStudentSortValue(b, sortState.key);
+  if (typeof aValue === "number" && typeof bValue === "number") return (aValue - bValue) * direction;
+  return String(aValue).localeCompare(String(bValue), "zh-Hant", { numeric: true, sensitivity: "base" }) * direction;
+}
+
+function getStudentSortValue(student, key) {
+  if (key === "grade" || key === "currentScore") return Number(student[key] || 0);
+  if (key === "updatedAt") return new Date(student.lastTransactionAt || student.updatedAt || 0).getTime();
+  return student[key] || "";
+}
+
+function renderStudentSortIndicators() {
+  document.querySelectorAll("[data-student-indicator]").forEach((indicator) => {
+    indicator.textContent = indicator.dataset.studentIndicator === sortState.key
+      ? (sortState.direction === "asc" ? "↑" : "↓")
+      : "";
+  });
 }
 
 function openCreateDialog() {

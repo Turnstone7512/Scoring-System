@@ -213,6 +213,20 @@ button:hover {
   background: var(--primary-dark);
 }
 
+.sort-button {
+  background: transparent;
+  color: var(--muted);
+  display: inline-flex;
+  gap: 6px;
+  padding: 0;
+  text-align: left;
+}
+
+.sort-button:hover {
+  background: transparent;
+  color: var(--primary);
+}
+
 .secondary-button {
   background: #ffffff;
   color: var(--primary);

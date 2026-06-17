@@ -20,6 +20,9 @@ let accounts = [];
 let searchTerm = "";
 let currentPage = 1;
 const pageSize = 10;
+let sortState = { key: "updatedAt", direction: "desc" };
+
+setupAccountSortHeaders();
 
 addAccountButton.addEventListener("click", openCreateDialog);
 accountForm.addEventListener("submit", saveAccount);
@@ -54,7 +57,8 @@ function renderAccounts() {
     const haystack = `${account.account || ""} ${account.name || ""} ${account.role || ""}`.toLowerCase();
     return haystack.includes(searchTerm);
   });
-  const pageResult = AppUI.paginate(filtered, currentPage, pageSize);
+  const sortedAccounts = [...filtered].sort(compareAccounts);
+  const pageResult = AppUI.paginate(sortedAccounts, currentPage, pageSize);
   currentPage = pageResult.page;
 
   accountCount.textContent = `共 ${filtered.length} 個帳號`;
@@ -64,9 +68,62 @@ function renderAccounts() {
     currentPage = page;
     renderAccounts();
   });
+  AppUI.renderPagination(document.querySelector("#accountPaginationBottom"), currentPage, pageResult.totalPages, (page) => {
+    currentPage = page;
+    renderAccounts();
+  });
+  renderAccountSortIndicators();
 
   accountTableBody.querySelectorAll("[data-edit]").forEach((button) => button.addEventListener("click", () => openEditDialog(button.dataset.edit)));
   accountTableBody.querySelectorAll("[data-delete]").forEach((button) => button.addEventListener("click", () => deleteAccount(button.dataset.delete)));
+}
+
+function setupAccountSortHeaders() {
+  document.querySelector(".accounts-page .table-wrap")?.insertAdjacentHTML("afterend", `<div id="accountPaginationBottom" class="pagination"></div>`);
+  const headers = document.querySelectorAll(".account-table thead th");
+  const columns = [
+    ["account", "帳號"],
+    ["name", "姓名"],
+    ["role", "角色"],
+    ["updatedAt", "最後異動時間"],
+  ];
+  columns.forEach(([key, label], index) => {
+    const header = headers[index];
+    if (!header) return;
+    header.innerHTML = `<button class="sort-button" type="button" data-account-sort="${key}">${label} <span data-account-indicator="${key}"></span></button>`;
+  });
+  document.querySelectorAll("[data-account-sort]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.accountSort;
+      sortState = {
+        key,
+        direction: sortState.key === key && sortState.direction === "desc" ? "asc" : "desc",
+      };
+      currentPage = 1;
+      renderAccounts();
+    });
+  });
+}
+
+function compareAccounts(a, b) {
+  const direction = sortState.direction === "asc" ? 1 : -1;
+  const aValue = getAccountSortValue(a, sortState.key);
+  const bValue = getAccountSortValue(b, sortState.key);
+  if (typeof aValue === "number" && typeof bValue === "number") return (aValue - bValue) * direction;
+  return String(aValue).localeCompare(String(bValue), "zh-Hant", { numeric: true, sensitivity: "base" }) * direction;
+}
+
+function getAccountSortValue(account, key) {
+  if (key === "updatedAt") return new Date(account.updatedAt || account.createdAt || 0).getTime();
+  return account[key] || "";
+}
+
+function renderAccountSortIndicators() {
+  document.querySelectorAll("[data-account-indicator]").forEach((indicator) => {
+    indicator.textContent = indicator.dataset.accountIndicator === sortState.key
+      ? (sortState.direction === "asc" ? "↑" : "↓")
+      : "";
+  });
 }
 
 function renderAccountRow(account) {

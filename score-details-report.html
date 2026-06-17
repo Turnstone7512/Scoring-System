@@ -1,40 +1,40 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>點數明細報表</title>
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="score-details-report.css?v=20260617-0045" />
+    <title>暺?敦?梯”</title>
+    <link rel="stylesheet" href="styles.css?v=20260617-0140" />
+    <link rel="stylesheet" href="score-details-report.css?v=20260617-0140" />
   </head>
   <body class="theme-reports">
     <header class="app-header">
-      <div><h1>點數明細報表</h1><p>依學生、日期、獎懲類型與項目查詢點數明細。</p></div>
+      <div><h1>暺?敦?梯”</h1><p>靘飛????脤?????亥岷暺?敦??/p></div>
       <div class="header-actions">
         <a class="secondary-link" href="index.html">Dashboard</a>
-        <a class="secondary-link" href="score-transactions.html">點數異動</a>
-        <a class="secondary-link admin-only" href="score-items.html">獎懲項目異動</a>
-        <a class="secondary-link" href="students.html">學生管理</a>
-        <a class="secondary-link" href="audit-logs.html">異動紀錄</a>
+        <a class="secondary-link" href="score-transactions.html">暺?啣?</a>
+        <a class="secondary-link admin-only" href="score-items.html">???啣?</a>
+        <a class="secondary-link" href="students.html">摮貊?蝞∠?</a>
+        <a class="secondary-link" href="audit-logs.html">?啣?蝝??/a>
       </div>
     </header>
     <main class="report-page">
       <section class="report-panel">
-        <div class="section-title"><div><h2>查詢條件</h2><p class="meta">項目可用 Ctrl 或 Shift 複選。</p></div></div>
+        <div class="section-title"><div><h2>?亥岷璇辣</h2><p class="meta">??舐 Ctrl ??Shift 銴??/p></div></div>
         <form id="reportSearchForm" class="report-search-grid">
-          <label>學生<select id="studentId"><option value="">全部學生</option></select></label>
-          <label>起始日期<input id="dateFrom" type="date" /></label>
-          <label>結束日期<input id="dateTo" type="date" /></label>
-          <label>類型<select id="type"><option value="">全部</option><option value="REWARD">獎勵</option><option value="PENALTY">懲罰</option><option value="REDEEM">兌換獎品</option><option value="SETTLEMENT">結餘</option></select></label>
-          <label class="wide-field">主類別 - 子類別<select id="scoreItemIds" multiple size="6"></select></label>
-          <div class="form-actions align-end"><button type="submit">查詢</button><button id="clearButton" class="secondary-button" type="button">清除條件</button></div>
+          <label>摮貊?<select id="studentId"><option value="">?券摮貊?</option></select></label>
+          <label>韏瑕??交?<input id="dateFrom" type="date" /></label>
+          <label>蝯??交?<input id="dateTo" type="date" /></label>
+          <label>憿?<select id="type"><option value="">?券</option><option value="REWARD">?</option><option value="PENALTY">?脩蔑</option><option value="REDEEM">????</option><option value="SETTLEMENT">蝯?</option></select></label>
+          <label class="wide-field">銝駁???- 摮???select id="scoreItemIds" multiple size="6"></select></label>
+          <div class="form-actions align-end"><button type="submit">?亥岷</button><button id="clearButton" class="secondary-button" type="button">皜璇辣</button></div>
         </form>
       </section>
       <section class="report-panel">
-        <div class="section-title"><div><h2>報表結果</h2><p id="resultCount" class="meta">載入中...</p></div></div>
+        <div class="section-title"><div><h2>?梯”蝯?</h2><p id="resultCount" class="meta">頛銝?..</p></div></div>
         <div class="table-wrap" aria-live="polite">
-          <table class="report-table"><thead><tr><th><button class="sort-button" type="button" data-sort="student">學生 <span data-indicator="student"></span></button></th><th><button class="sort-button" type="button" data-sort="date">日期 <span data-indicator="date"></span></button></th><th>獎勵 / 懲罰</th><th>主類別 - 子類別</th><th><button class="sort-button" type="button" data-sort="score">異動點數 <span data-indicator="score"></span></button></th><th>累計點數</th></tr></thead><tbody id="reportTableBody"></tbody></table>
-          <div id="emptyReport" class="empty-state hidden">沒有符合條件的點數明細</div>
+          <table class="report-table"><thead><tr><th><button class="sort-button" type="button" data-sort="student">摮貊? <span data-indicator="student"></span></button></th><th><button class="sort-button" type="button" data-sort="date">?交? <span data-indicator="date"></span></button></th><th>? / ?脩蔑</th><th>銝駁???- 摮???/th><th><button class="sort-button" type="button" data-sort="score">?啣?暺 <span data-indicator="score"></span></button></th><th>蝝航?暺</th></tr></thead><tbody id="reportTableBody"></tbody></table>
+          <div id="emptyReport" class="empty-state hidden">瘝?蝚血?璇辣???豢?蝝?/div>
         </div>
       </section>
     </main>
@@ -43,6 +43,7 @@
     <script src="api-client.js?v=20260617-0045"></script>
     <script src="auth.js"></script>
     <script src="ui-utils.js"></script>
-    <script src="score-details-report.js?v=20260617-0045"></script>
+    <script src="score-details-report.js?v=20260617-0140"></script>
   </body>
 </html>
+

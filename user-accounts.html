@@ -1,39 +1,39 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>使用者帳號管理</title>
-    <link rel="stylesheet" href="styles.css" />
+    <title>雿輻?董?恣??/title>
+    <link rel="stylesheet" href="styles.css?v=20260617-0140" />
     <link rel="stylesheet" href="user-accounts.css" />
   </head>
   <body class="theme-user-accounts">
     <header class="app-header">
       <div>
-        <h1>使用者帳號管理</h1>
-        <p>管理 Admin / Viewer 帳號、角色與密碼。</p>
+        <h1>雿輻?董?恣??/h1>
+        <p>蝞∠? Admin / Viewer 撣唾????脰?撖Ⅳ??/p>
       </div>
       <div class="header-actions">
         <a class="secondary-link" href="index.html">Dashboard</a>
-        <a class="secondary-link" href="students.html">學生管理</a>
-        <a class="secondary-link admin-only" href="score-items.html">獎懲項目異動</a>
-        <a class="secondary-link" href="score-transactions.html">積分異動</a>
-        <a class="secondary-link" href="score-details-report.html">積分明細報表</a>
-        <a class="secondary-link" href="audit-logs.html">異動紀錄</a>
+        <a class="secondary-link" href="students.html">摮貊?蝞∠?</a>
+        <a class="secondary-link admin-only" href="score-items.html">???啣?</a>
+        <a class="secondary-link" href="score-transactions.html">蝛??啣?</a>
+        <a class="secondary-link" href="score-details-report.html">蝛??敦?梯”</a>
+        <a class="secondary-link" href="audit-logs.html">?啣?蝝??/a>
       </div>
     </header>
 
     <main class="accounts-page admin-only">
       <section class="toolbar">
         <div>
-          <h2>帳號清單</h2>
-          <p id="accountCount" class="meta">載入中...</p>
+          <h2>撣唾?皜</h2>
+          <p id="accountCount" class="meta">頛銝?..</p>
         </div>
-        <button id="addAccountButton" type="button">新增帳號</button>
+        <button id="addAccountButton" type="button">?啣?撣唾?</button>
       </section>
 
       <div class="utility-row">
-        <input id="accountSearch" class="table-search" type="search" placeholder="搜尋帳號、姓名或角色" />
+        <input id="accountSearch" class="table-search" type="search" placeholder="??撣唾?????閫" />
         <div id="accountPagination" class="pagination"></div>
       </div>
 
@@ -41,54 +41,54 @@
         <table class="account-table">
           <thead>
             <tr>
-              <th>帳號</th>
-              <th>姓名</th>
-              <th>角色</th>
-              <th>更新時間</th>
-              <th>操作</th>
+              <th>撣唾?</th>
+              <th>憪?</th>
+              <th>閫</th>
+              <th>?湔??</th>
+              <th>??</th>
             </tr>
           </thead>
           <tbody id="accountTableBody"></tbody>
         </table>
-        <div id="emptyAccounts" class="empty-state hidden">目前沒有帳號資料</div>
+        <div id="emptyAccounts" class="empty-state hidden">?桀?瘝?撣唾?鞈?</div>
       </section>
     </main>
 
     <section class="accounts-page viewer-only">
-      <div class="empty-state">請切換為 Admin 後管理使用者帳號。</div>
+      <div class="empty-state">隢?? Admin 敺恣?蝙?刻董??/div>
     </section>
 
     <dialog id="accountDialog" class="modal">
       <form id="accountForm" method="dialog" class="entry-form modal-form">
         <div class="modal-title">
-          <h2 id="accountFormTitle">新增帳號</h2>
-          <button id="closeAccountDialog" class="secondary-button icon-button" type="button" aria-label="關閉">×</button>
+          <h2 id="accountFormTitle">?啣?撣唾?</h2>
+          <button id="closeAccountDialog" class="secondary-button icon-button" type="button" aria-label="??">?</button>
         </div>
         <input id="accountId" type="hidden" />
         <label>
-          帳號
+          撣唾?
           <input id="account" type="text" required maxlength="80" />
         </label>
         <label>
-          姓名
+          憪?
           <input id="name" type="text" required maxlength="80" />
         </label>
         <label>
-          角色
+          閫
           <select id="role" required>
             <option value="ADMIN">Admin</option>
             <option value="VIEWER">Viewer</option>
           </select>
         </label>
         <label>
-          密碼 / 修改密碼
+          撖Ⅳ / 靽格撖Ⅳ
           <input id="password" type="password" minlength="1" autocomplete="new-password" />
-          <span class="meta">新增帳號必填；編輯帳號時留空代表不變更密碼。</span>
+          <span class="meta">?啣?撣唾?敹‵嚗楊頛臬董???征隞?”銝??游?蝣潦?/span>
         </label>
         <p id="formError" class="error-text hidden"></p>
         <div class="form-actions">
-          <button type="submit">儲存</button>
-          <button id="cancelAccountForm" class="secondary-button" type="button">取消</button>
+          <button type="submit">?脣?</button>
+          <button id="cancelAccountForm" class="secondary-button" type="button">??</button>
         </div>
       </form>
     </dialog>
@@ -98,6 +98,7 @@
     <script src="api-client.js?v=20260617-0045"></script>
     <script src="auth.js"></script>
     <script src="ui-utils.js"></script>
-    <script src="user-accounts.js"></script>
+    <script src="user-accounts.js?v=20260617-0140"></script>
   </body>
 </html>
+

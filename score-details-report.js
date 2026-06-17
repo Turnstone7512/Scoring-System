@@ -22,6 +22,7 @@ const pageSize = 10;
 let sortState = { key: "date", direction: "desc" };
 
 insertReportControls();
+setupReportSortHeaders();
 
 searchForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -105,6 +106,7 @@ function insertReportControls() {
       <div id="reportPagination" class="pagination"></div>
     </div>
   `);
+  document.querySelector(".report-page .table-wrap").insertAdjacentHTML("afterend", `<div id="reportPaginationBottom" class="pagination"></div>`);
   document.querySelector("#reportKeywordSearch").addEventListener("input", (event) => {
     searchTerm = event.target.value.trim().toLowerCase();
     currentPage = 1;
@@ -127,6 +129,10 @@ function renderReport() {
     currentPage = page;
     renderReport();
   });
+  AppUI.renderPagination(document.querySelector("#reportPaginationBottom"), currentPage, pageResult.totalPages, (page) => {
+    currentPage = page;
+    renderReport();
+  });
 }
 
 function renderReportRow(row) {
@@ -143,6 +149,35 @@ function renderReportRow(row) {
     </tr>
   `;
 }
+
+function setupReportSortHeaders() {
+  const headers = document.querySelectorAll(".report-table thead th");
+  const columns = [
+    ["student", "學生"],
+    ["date", "日期"],
+    ["type", "類型"],
+    ["item", "項目"],
+    ["score", "異動點數"],
+    ["runningTotalScore", "結餘點數"],
+  ];
+  columns.forEach(([key, label], index) => {
+    const header = headers[index];
+    if (!header) return;
+    header.innerHTML = `<button class="sort-button" type="button" data-report-sort="${key}">${label} <span data-indicator="${key}"></span></button>`;
+  });
+  document.querySelectorAll("[data-report-sort]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.reportSort;
+      sortState = {
+        key,
+        direction: sortState.key === key && sortState.direction === "desc" ? "asc" : "desc",
+      };
+      currentPage = 1;
+      renderReport();
+    });
+  });
+}
+
 
 function getFilteredRows() {
   return rows.filter((row) => {
@@ -215,6 +250,9 @@ function getSortValue(row, key) {
   if (key === "date") return new Date(row.transactionDate).getTime();
   if (key === "student") return row.student?.name || "";
   if (key === "score") return Number(row.scoreChange || 0);
+  if (key === "runningTotalScore") return Number(row.runningTotalScore || 0);
+  if (key === "type") return getTypeLabel(row.type);
+  if (key === "item") return getItemLabel(row);
   return "";
 }
 

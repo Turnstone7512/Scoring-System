@@ -57,8 +57,10 @@ let transactions = [];
 let transactionSearchTerm = "";
 let currentPage = 1;
 const pageSize = 10;
+let sortState = { key: "transactionDate", direction: "desc" };
 
 insertTransactionControls();
+setupTransactionSortHeaders();
 
 searchForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -136,6 +138,7 @@ function insertTransactionControls() {
       <div id="transactionPagination" class="pagination"></div>
     </div>
   `);
+  document.querySelector(".table-section .table-wrap").insertAdjacentHTML("afterend", `<div id="transactionPaginationBottom" class="pagination"></div>`);
   document.querySelector("#transactionSearch").addEventListener("input", (event) => {
     transactionSearchTerm = event.target.value.trim().toLowerCase();
     currentPage = 1;
@@ -258,7 +261,8 @@ function renderTransactions() {
     const haystack = `${transaction.student?.name || ""} ${itemLabel} ${transaction.type} ${transaction.scoreChange}`.toLowerCase();
     return haystack.includes(transactionSearchTerm);
   });
-  const pageResult = AppUI.paginate(filtered, currentPage, pageSize);
+  const sortedTransactions = [...filtered].sort(compareTransactions);
+  const pageResult = AppUI.paginate(sortedTransactions, currentPage, pageSize);
   currentPage = pageResult.page;
 
   transactionCount.textContent = `共 ${filtered.length} 筆紀錄`;
@@ -268,6 +272,11 @@ function renderTransactions() {
     currentPage = page;
     renderTransactions();
   });
+  AppUI.renderPagination(document.querySelector("#transactionPaginationBottom"), currentPage, pageResult.totalPages, (page) => {
+    currentPage = page;
+    renderTransactions();
+  });
+  renderTransactionSortIndicators();
 
   transactionsTableBody.querySelectorAll("[data-edit]").forEach((button) => button.addEventListener("click", () => editTransaction(button.dataset.edit)));
   transactionsTableBody.querySelectorAll("[data-delete]").forEach((button) => button.addEventListener("click", () => deleteTransaction(button.dataset.delete)));
@@ -295,6 +304,58 @@ function renderTransactionRow(transaction) {
       </td>
     </tr>
   `;
+}
+
+function setupTransactionSortHeaders() {
+  const headers = document.querySelectorAll(".transaction-table thead th");
+  const columns = [
+    ["student", "學生"],
+    ["transactionDate", "生效日期"],
+    ["type", "類型"],
+    ["item", "項目"],
+    ["scoreChange", "異動點數"],
+    ["runningTotalScore", "結餘點數"],
+  ];
+  columns.forEach(([key, label], index) => {
+    const header = headers[index];
+    if (!header) return;
+    header.innerHTML = `<button class="sort-button" type="button" data-transaction-sort="${key}">${label} <span data-transaction-indicator="${key}"></span></button>`;
+  });
+  document.querySelectorAll("[data-transaction-sort]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.transactionSort;
+      sortState = {
+        key,
+        direction: sortState.key === key && sortState.direction === "desc" ? "asc" : "desc",
+      };
+      currentPage = 1;
+      renderTransactions();
+    });
+  });
+}
+
+function compareTransactions(a, b) {
+  const direction = sortState.direction === "asc" ? 1 : -1;
+  const aValue = getTransactionSortValue(a, sortState.key);
+  const bValue = getTransactionSortValue(b, sortState.key);
+  if (typeof aValue === "number" && typeof bValue === "number") return (aValue - bValue) * direction;
+  return String(aValue).localeCompare(String(bValue), "zh-Hant", { numeric: true, sensitivity: "base" }) * direction;
+}
+
+function getTransactionSortValue(transaction, key) {
+  if (key === "transactionDate") return new Date(transaction.transactionDate || 0).getTime();
+  if (key === "scoreChange" || key === "runningTotalScore") return Number(transaction[key] || 0);
+  if (key === "student") return transaction.student?.name || "";
+  if (key === "item") return getTransactionItemLabel(transaction);
+  return transaction[key] || "";
+}
+
+function renderTransactionSortIndicators() {
+  document.querySelectorAll("[data-transaction-indicator]").forEach((indicator) => {
+    indicator.textContent = indicator.dataset.transactionIndicator === sortState.key
+      ? (sortState.direction === "asc" ? "↑" : "↓")
+      : "";
+  });
 }
 
 async function saveAllV2Transactions() {
