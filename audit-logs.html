@@ -5,11 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>異動紀錄查詢</title>
     <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="audit-logs.css?v=20260616-1710" />
+    <link rel="stylesheet" href="audit-logs.css?v=20260617-0025" />
   </head>
   <body class="theme-audit-logs">
     <header class="app-header">
-      <div><h1>異動紀錄查詢</h1><p>查詢新增、編輯與刪除等資料異動紀錄。</p></div>
+      <div>
+        <h1>異動紀錄查詢</h1>
+        <p>查詢學生資料、獎懲項目與點數異動的修改紀錄。</p>
+      </div>
       <div class="header-actions">
         <a class="secondary-link" href="index.html">Dashboard</a>
         <a class="secondary-link" href="students.html">學生管理</a>
@@ -20,27 +23,57 @@
     </header>
     <main class="audit-page">
       <section class="audit-panel">
-        <div class="section-title"><div><h2>查詢條件</h2><p class="meta">可依資料表、動作、日期或 recordId 查詢。</p></div></div>
+        <div class="section-title">
+          <div>
+            <h2>查詢條件</h2>
+            <p class="meta">可依資料類型、動作、日期或 recordId 查詢。</p>
+          </div>
+        </div>
         <form id="auditSearchForm" class="audit-search-grid">
-          <label>資料表<select id="tableName"><option value="">全部資料表</option><option value="Student">Student</option><option value="ScoreItem">ScoreItem</option><option value="ScoreTransaction">ScoreTransaction</option><option value="UserAccount">UserAccount</option></select></label>
-          <label>動作<select id="action"><option value="">全部動作</option><option value="CREATE">CREATE</option><option value="UPDATE">UPDATE</option><option value="DELETE">DELETE</option></select></label>
-          <label>起始日期<input id="dateFrom" type="date" /></label>
+          <label>
+            資料類型
+            <select id="tableName">
+              <option value="">全部資料類型</option>
+              <option value="Student">Student</option>
+              <option value="ScoreItem">ScoreItem</option>
+              <option value="ScoreTransaction">ScoreTransaction</option>
+              <option value="UserAccount">UserAccount</option>
+            </select>
+          </label>
+          <label>
+            動作
+            <select id="action">
+              <option value="">全部動作</option>
+              <option value="CREATE">CREATE</option>
+              <option value="UPDATE">UPDATE</option>
+              <option value="DELETE">DELETE</option>
+            </select>
+          </label>
+          <label>開始日期<input id="dateFrom" type="date" /></label>
           <label>結束日期<input id="dateTo" type="date" /></label>
           <label class="wide-field">recordId<input id="recordId" type="text" placeholder="輸入資料 ID" /></label>
-          <div class="form-actions align-end"><button type="submit">查詢</button><button id="clearButton" class="secondary-button" type="button">清除條件</button></div>
+          <div class="form-actions align-end">
+            <button type="submit">查詢</button>
+            <button id="clearButton" class="secondary-button" type="button">清除條件</button>
+          </div>
         </form>
       </section>
       <section class="audit-panel">
-        <div class="section-title"><div><h2>查詢結果</h2><p id="resultCount" class="meta">載入中...</p></div></div>
+        <div class="section-title">
+          <div>
+            <h2>查詢結果</h2>
+            <p id="resultCount" class="meta">載入中...</p>
+          </div>
+        </div>
         <div id="auditList" class="audit-list" aria-live="polite"></div>
         <div id="emptyAuditLogs" class="empty-state hidden">沒有異動紀錄</div>
       </section>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
-    <script src="api-client.js"></script>
+    <script src="api-client.js?v=20260617-0045"></script>
     <script src="auth.js"></script>
     <script src="ui-utils.js"></script>
-    <script src="audit-logs.js?v=20260616-1710"></script>
+    <script src="audit-logs.js?v=20260617-0025"></script>
   </body>
 </html>

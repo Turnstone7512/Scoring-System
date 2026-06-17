@@ -74,6 +74,15 @@
   color: var(--danger);
 }
 
+.type-pill.redeem {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.muted-cell {
+  color: var(--muted);
+}
+
 .score-image {
   background: var(--soft);
   border: 1px solid var(--line);

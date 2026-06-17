@@ -89,7 +89,7 @@ function renderDashboard() {
 }
 
 function renderDashboardStatus() {
-  sortStatus.textContent = `依 ${sortLabel(sortState.key)} ${sortState.direction === "asc" ? "遞增" : "遞減"}排序`;
+  sortStatus.textContent = `依 ${sortLabel(sortState.key)} ${sortState.direction === "asc" ? "升冪" : "降冪"} 排序`;
 }
 
 function renderSortIndicators() {
@@ -104,7 +104,7 @@ function renderStudentRow(student) {
   const score = Number(student.currentScore || 0);
   const scoreClass = score > 0 ? "positive" : score < 0 ? "negative" : "zero";
   return `
-    <tr class="dashboard-row" data-student-id="${student.id}" title="查看 ${escapeHtml(student.name)} 的積分異動">
+    <tr class="dashboard-row" data-student-id="${student.id}" title="查看 ${escapeHtml(student.name)} 的異動">
       <td><strong>${escapeHtml(student.name)}</strong></td>
       <td>${escapeHtml(student.classNo || "-")}</td>
       <td><span class="score-value ${scoreClass}">${score}</span></td>
@@ -117,28 +117,37 @@ function renderMonthlyChart() {
   const months = monthlyScores.months || [];
   const series = monthlyScores.students || [];
   if (!months.length || !series.length) {
-    monthlyChart.innerHTML = `<div class="empty-state">目前沒有每月積分資料</div>`;
+    monthlyChart.innerHTML = `<div class="empty-state">目前沒有每月點數資料</div>`;
     return;
   }
 
   const width = Math.max(760, months.length * 120);
-  const height = 360;
-  const padding = { top: 28, right: 36, bottom: 58, left: 62 };
+  const height = 380;
+  const padding = { top: 30, right: 36, bottom: 58, left: 72 };
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
   const values = series.flatMap((student) => student.points.map((point) => Number(point.score || 0)));
   const minValue = Math.min(0, ...values);
   const maxValue = Math.max(0, ...values);
-  const range = Math.max(1, maxValue - minValue);
-  const yTicks = makeTicks(minValue, maxValue);
+  const scale = createYAxisScale(minValue, maxValue, plotHeight, padding.top);
 
   const x = (index) => padding.left + (months.length === 1 ? plotWidth / 2 : (index / (months.length - 1)) * plotWidth);
-  const y = (value) => padding.top + ((maxValue - value) / range) * plotHeight;
+  const y = (value) => scale.y(value);
+  const yTicks = makeTicksForScale(scale, minValue, maxValue);
 
   const grid = yTicks.map((tick) => `
     <line class="chart-grid" x1="${padding.left}" y1="${y(tick)}" x2="${width - padding.right}" y2="${y(tick)}"></line>
     <text class="chart-label" x="${padding.left - 10}" y="${y(tick) + 4}" text-anchor="end">${tick}</text>
   `).join("");
+
+  const zeroLine = `
+    <line class="chart-zero-line" x1="${padding.left}" y1="${y(0)}" x2="${width - padding.right}" y2="${y(0)}"></line>
+    <text class="chart-zero-label" x="${width - padding.right + 8}" y="${y(0) + 4}">0</text>
+  `;
+
+  const axisBreak = scale.break
+    ? renderAxisBreak(scale.break.y, padding.left, width - padding.right)
+    : "";
 
   const monthLabels = months.map((month, index) => `
     <text class="chart-label" x="${x(index)}" y="${height - 18}" text-anchor="middle">${escapeHtml(month)}</text>
@@ -146,11 +155,14 @@ function renderMonthlyChart() {
 
   const lines = series.map((student) => {
     const points = student.points.map((point, index) => `${x(index)},${y(Number(point.score || 0))}`).join(" ");
-    const dots = student.points.map((point, index) => `
-      <circle class="chart-point" cx="${x(index)}" cy="${y(Number(point.score || 0))}" r="4" style="fill:${escapeHtml(student.color)}">
-        <title>${escapeHtml(student.name)} ${escapeHtml(point.month)}：${Number(point.score || 0)}</title>
-      </circle>
-    `).join("");
+    const dots = student.points.map((point, index) => {
+      const score = Number(point.score || 0);
+      return `
+        <circle class="chart-point" cx="${x(index)}" cy="${y(score)}" r="4" style="fill:${escapeHtml(student.color)}">
+          <title>${escapeHtml(student.name)} ${escapeHtml(point.month)}：${score}</title>
+        </circle>
+      `;
+    }).join("");
     return `
       <polyline class="chart-line" points="${points}" style="stroke:${escapeHtml(student.color)}"></polyline>
       ${dots}
@@ -161,29 +173,114 @@ function renderMonthlyChart() {
     <span class="chart-legend-item"><i style="background:${escapeHtml(student.color)}"></i>${escapeHtml(student.name)}</span>
   `).join("");
 
+  const breakNote = scale.break
+    ? `<p class="chart-note">Y 軸已略過 ${scale.break.start} 到 ${scale.break.end} 的空白區間。</p>`
+    : "";
+
   monthlyChart.innerHTML = `
     <div class="chart-scroll">
       <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="每月月底點數折線圖">
         ${grid}
+        ${zeroLine}
         <line class="chart-axis" x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}"></line>
         <line class="chart-axis" x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}"></line>
+        ${axisBreak}
         ${monthLabels}
         ${lines}
       </svg>
     </div>
     <div class="chart-legend">${legend}</div>
+    ${breakNote}
   `;
+}
+
+function createYAxisScale(minValue, maxValue, plotHeight, top) {
+  const range = Math.max(1, maxValue - minValue);
+  const breakCandidate = findAxisBreak(minValue, maxValue);
+  if (!breakCandidate) {
+    return {
+      y: (value) => top + ((maxValue - value) / range) * plotHeight,
+      break: null,
+    };
+  }
+
+  const breakPixels = 26;
+  const visibleRange = Math.max(1, range - breakCandidate.size);
+  const pixelsPerUnit = (plotHeight - breakPixels) / visibleRange;
+  const breakY = top + (maxValue - breakCandidate.end) * pixelsPerUnit + breakPixels / 2;
+  return {
+    y: (value) => {
+      if (value >= breakCandidate.end) {
+        return top + (maxValue - value) * pixelsPerUnit;
+      }
+      return top + (maxValue - breakCandidate.end) * pixelsPerUnit + breakPixels + (breakCandidate.start - value) * pixelsPerUnit;
+    },
+    break: {
+      ...breakCandidate,
+      y: breakY,
+    },
+  };
+}
+
+function findAxisBreak(minValue, maxValue) {
+  const allValues = monthlyScores.students
+    .flatMap((student) => student.points.map((point) => Number(point.score || 0)))
+    .concat([0, minValue, maxValue]);
+  const uniqueValues = [...new Set(allValues)].sort((a, b) => a - b);
+  let largestGap = null;
+  for (let index = 1; index < uniqueValues.length; index += 1) {
+    const start = uniqueValues[index - 1];
+    const end = uniqueValues[index];
+    const size = end - start;
+    if (size > 1000 && (!largestGap || size > largestGap.size)) {
+      largestGap = { start, end, size };
+    }
+  }
+  if (!largestGap) return null;
+  return {
+    start: largestGap.start,
+    end: largestGap.end,
+    size: largestGap.size,
+  };
+}
+
+function renderAxisBreak(y, axisX, rightX) {
+  return `
+    <path class="chart-axis-break" d="M ${axisX - 7} ${y - 7} L ${axisX + 7} ${y - 1} L ${axisX - 7} ${y + 5} L ${axisX + 7} ${y + 11}"></path>
+    <line class="chart-break-guide" x1="${axisX + 18}" y1="${y}" x2="${rightX}" y2="${y}"></line>
+  `;
+}
+
+function makeTicksForScale(scale, minValue, maxValue) {
+  if (!scale.break) return makeTicks(minValue, maxValue);
+  const lowerTicks = makeTicks(minValue, scale.break.start).filter((tick) => tick <= scale.break.start);
+  const upperTicks = makeTicks(scale.break.end, maxValue).filter((tick) => tick >= scale.break.end);
+  return [...new Set([...lowerTicks, ...upperTicks, 0, minValue, maxValue])]
+    .filter((tick) => tick >= minValue && tick <= maxValue)
+    .filter((tick) => tick <= scale.break.start || tick >= scale.break.end)
+    .sort((a, b) => a - b);
 }
 
 function makeTicks(minValue, maxValue) {
   if (minValue === maxValue) return [minValue];
   const ticks = [];
-  const step = Math.max(1, Math.ceil((maxValue - minValue) / 4));
-  for (let value = minValue; value <= maxValue; value += step) {
-    ticks.push(value);
+  const step = niceStep((maxValue - minValue) / 4);
+  const firstTick = Math.ceil(minValue / step) * step;
+  for (let value = firstTick; value <= maxValue; value += step) {
+    ticks.push(Math.round(value));
   }
-  if (ticks[ticks.length - 1] !== maxValue) ticks.push(maxValue);
-  return ticks;
+  if (!ticks.includes(minValue)) ticks.unshift(minValue);
+  if (!ticks.includes(maxValue)) ticks.push(maxValue);
+  return [...new Set(ticks)];
+}
+
+function niceStep(rawStep) {
+  const magnitude = 10 ** Math.floor(Math.log10(Math.max(1, rawStep)));
+  const normalized = rawStep / magnitude;
+  if (normalized <= 1) return magnitude;
+  if (normalized <= 2) return 2 * magnitude;
+  if (normalized <= 5) return 5 * magnitude;
+  return 10 * magnitude;
 }
 
 function compareStudents(a, b) {
@@ -204,7 +301,7 @@ function sortLabel(key) {
   return {
     name: "學生姓名",
     classNo: "座號",
-    currentScore: "目前積分",
+    currentScore: "目前點數",
     lastTransactionAt: "最後異動時間",
   }[key] || key;
 }
@@ -222,7 +319,7 @@ function formatDate(value) {
 }
 
 function escapeHtml(value) {
-  return String(value)
+  return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")

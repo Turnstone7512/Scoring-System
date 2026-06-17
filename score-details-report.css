@@ -97,6 +97,11 @@
   color: var(--danger);
 }
 
+.type-pill.redeem {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
 .type-pill.settlement {
   background: #eef2ff;
   color: #4338ca;

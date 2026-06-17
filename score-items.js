@@ -36,6 +36,7 @@ addScoreItemButton.addEventListener("click", openCreateDialog);
 scoreItemForm.addEventListener("submit", saveScoreItem);
 document.querySelector("#closeScoreItemDialog").addEventListener("click", closeScoreItemDialog);
 document.querySelector("#cancelScoreItemForm").addEventListener("click", closeScoreItemDialog);
+fields.type.addEventListener("change", updateImageVisibility);
 fields.imageUrl.addEventListener("input", updateImagePreview);
 
 filterButtons.forEach((button) => {
@@ -79,9 +80,9 @@ async function loadScoreItems() {
 function insertScoreItemControls() {
   document.querySelector(".tabs").insertAdjacentHTML("afterend", `
     <div class="utility-row score-item-filters">
-      <input id="scoreItemSearch" class="table-search" type="search" placeholder="搜尋主類別、子項目、學生或點數" />
+      <input id="scoreItemSearch" class="table-search" type="search" placeholder="搜尋主項目、子項目、學生或點數" />
       <select id="scoreItemStudentFilter"><option value="">全部學生</option></select>
-      <select id="scoreItemMainCategoryFilter"><option value="">全部主類別</option></select>
+      <select id="scoreItemMainCategoryFilter"><option value="">全部主項目</option></select>
       <select id="scoreItemPinnedFilter">
         <option value="ALL">全部置頂狀態</option>
         <option value="PINNED">置頂</option>
@@ -130,7 +131,7 @@ function renderMainCategoryFilterOptions() {
   const categories = [...new Set(scoreItems.map((item) => item.mainCategory).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-Hant"));
   const select = document.querySelector("#scoreItemMainCategoryFilter");
   if (!select) return;
-  select.innerHTML = `<option value="">全部主類別</option>${categories
+  select.innerHTML = `<option value="">全部主項目</option>${categories
     .map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`)
     .join("")}`;
   select.value = categories.includes(mainCategoryFilter) ? mainCategoryFilter : "";
@@ -164,21 +165,18 @@ function renderScoreItems() {
 }
 
 function renderScoreItemRow(item) {
-  const image = item.imageUrl
+  const image = item.type === "REDEEM" && item.imageUrl
     ? `<img class="score-image" src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.mainCategory)}">`
-    : `<span class="score-image placeholder">無圖片</span>`;
-  const typeLabel = item.type === "REWARD" ? "獎勵" : "懲罰";
-  const typeClass = item.type === "REWARD" ? "reward" : "penalty";
+    : `<span class="muted-cell">-</span>`;
   return `
     <tr>
-      <td><span class="type-pill ${typeClass}">${typeLabel}</span></td>
+      <td><span class="type-pill ${getTypeClass(item.type)}">${getTypeLabel(item.type)}</span></td>
       <td>${escapeHtml(getStudentLabel(item.studentId))}</td>
       <td>${item.isPinned ? "是" : "否"}</td>
-      <td>${escapeHtml(item.mainCategory)}</td>
-      <td>${escapeHtml(item.subCategory)}</td>
-      <td>${item.score}</td>
+      <td>${escapeHtml(getItemName(item))}</td>
+      <td>${Math.abs(Number(item.score || 0))}</td>
       <td>${image}</td>
-      <td><a class="history-link" href="audit-logs.html?tableName=ScoreItem&recordId=${encodeURIComponent(item.id)}">${formatDate(item.updatedAt)}</a></td>
+      <td><a class="history-link" href="audit-logs.html?tableName=ScoreItem&recordId=${encodeURIComponent(item.id)}">${formatDateOnly(item.updatedAt)}</a></td>
       <td>
         <div class="card-actions">
           <button type="button" data-edit="${item.id}">編輯</button>
@@ -198,7 +196,7 @@ function openCreateDialog() {
   scoreItemFormTitle.textContent = "新增項目";
   clearFieldErrors();
   hideFormError();
-  updateImagePreview();
+  updateImageVisibility();
   scoreItemDialog.showModal();
   fields.mainCategory.focus();
 }
@@ -211,13 +209,13 @@ function openEditDialog(id) {
   fields.studentId.value = item.studentId || "";
   fields.mainCategory.value = item.mainCategory;
   fields.subCategory.value = item.subCategory;
-  fields.imageUrl.value = item.imageUrl || "";
+  fields.imageUrl.value = item.type === "REDEEM" ? (item.imageUrl || "") : "";
   fields.score.value = Math.abs(item.score);
   fields.isPinned.checked = Boolean(item.isPinned);
   scoreItemFormTitle.textContent = "編輯項目";
   clearFieldErrors();
   hideFormError();
-  updateImagePreview();
+  updateImageVisibility();
   scoreItemDialog.showModal();
   fields.mainCategory.focus();
 }
@@ -230,7 +228,7 @@ async function saveScoreItem(event) {
     studentId: fields.studentId.value,
     mainCategory: fields.mainCategory.value.trim(),
     subCategory: fields.subCategory.value.trim(),
-    imageUrl: fields.imageUrl.value.trim(),
+    imageUrl: fields.type.value === "REDEEM" ? fields.imageUrl.value.trim() : "",
     score: Number(fields.score.value),
     isPinned: fields.isPinned.checked,
   };
@@ -243,7 +241,7 @@ async function saveScoreItem(event) {
   const url = id ? `/api/score-items/${id}` : "/api/score-items";
   const method = id ? "PUT" : "POST";
 
-  AppUI.showLoading("儲存獎懲項目...");
+  AppUI.showLoading("儲存項目...");
   try {
     await requestJson(url, {
       method,
@@ -263,7 +261,7 @@ async function saveScoreItem(event) {
 
 async function deleteScoreItem(id) {
   const item = scoreItems.find((entry) => entry.id === id);
-  if (!item || !confirm(`確定要刪除「${item.mainCategory} - ${item.subCategory}」？`)) return;
+  if (!item || !confirm(`確定要刪除「${item.mainCategory} - ${item.subCategory}」嗎？`)) return;
   AppUI.showLoading("刪除項目...");
   try {
     await requestJson(`/api/score-items/${id}`, { method: "DELETE" });
@@ -276,21 +274,26 @@ async function deleteScoreItem(id) {
   }
 }
 
-function openHistory(id) {
-  window.location.href = `audit-logs.html?tableName=ScoreItem&recordId=${encodeURIComponent(id)}`;
-}
-
 function closeScoreItemDialog() {
   scoreItemDialog.close();
 }
 
+function updateImageVisibility() {
+  const shouldShowImage = fields.type.value === "REDEEM";
+  document.querySelector("#imageUrlLabel").classList.toggle("hidden", !shouldShowImage);
+  if (!shouldShowImage) fields.imageUrl.value = "";
+  updateImagePreview();
+}
+
 function updateImagePreview() {
   const preview = document.querySelector("#scoreItemImagePreview");
-  preview.src = fields.imageUrl.value.trim();
-  preview.classList.toggle("hidden", !fields.imageUrl.value.trim());
+  const shouldShowPreview = fields.type.value === "REDEEM" && fields.imageUrl.value.trim();
+  preview.src = shouldShowPreview ? fields.imageUrl.value.trim() : "";
+  preview.classList.toggle("visible", Boolean(shouldShowPreview));
 }
 
 function validateScoreItem(data) {
+  if (!["REWARD", "PENALTY", "REDEEM"].includes(data.type)) return { valid: false, field: "type", message: "請選擇類型" };
   if (!data.mainCategory) return { valid: false, field: "mainCategory", message: "請輸入主項目" };
   if (!data.subCategory) return { valid: false, field: "subCategory", message: "請輸入子項目" };
   if (!Number.isInteger(data.score) || data.score <= 0) return { valid: false, field: "score", message: "點數必須是正整數" };
@@ -298,8 +301,30 @@ function validateScoreItem(data) {
 }
 
 function getStudentLabel(studentId) {
-  if (!studentId) return "所有學生";
-  return students.find((student) => student.id === studentId)?.name || "指定學生";
+  if (!studentId) return "所有學生共用";
+  return students.find((student) => student.id === studentId)?.name || "未知學生";
+}
+
+function getItemName(item) {
+  const mainCategory = item.mainCategory || "";
+  const subCategory = item.subCategory || "";
+  if (!mainCategory) return subCategory || "-";
+  if (!subCategory) return mainCategory;
+  return `${mainCategory} - ${subCategory}`;
+}
+
+function getTypeLabel(type) {
+  if (type === "REWARD") return "獎勵";
+  if (type === "PENALTY") return "懲罰";
+  if (type === "REDEEM") return "兌換獎品";
+  return type || "-";
+}
+
+function getTypeClass(type) {
+  if (type === "REWARD") return "reward";
+  if (type === "PENALTY") return "penalty";
+  if (type === "REDEEM") return "redeem";
+  return "";
 }
 
 function showFormError(message) {
@@ -334,8 +359,13 @@ function formatDate(value) {
   return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
+function formatDateOnly(value) {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(value));
+}
+
 function escapeHtml(value) {
-  return String(value)
+  return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")

@@ -160,7 +160,7 @@
       main_category: text(data.mainCategory),
       sub_category: text(data.subCategory),
       image_url: emptyToNull(data.imageUrl),
-      score: data.type === "PENALTY" ? -score : score,
+      score: isDeductionType(data.type) ? -score : score,
       is_pinned: Boolean(data.isPinned),
     };
     const [inserted] = await api("/score_items?select=*", {
@@ -181,7 +181,7 @@
       main_category: text(data.mainCategory),
       sub_category: text(data.subCategory),
       image_url: emptyToNull(data.imageUrl),
-      score: data.type === "PENALTY" ? -score : score,
+      score: isDeductionType(data.type) ? -score : score,
       is_pinned: Boolean(data.isPinned),
       updated_at: new Date().toISOString(),
     };
@@ -488,7 +488,11 @@
   function signedScore(type, score) {
     const value = Math.abs(Number(score));
     if (type === "SETTLEMENT") return Number(score || 0);
-    return type === "PENALTY" ? -value : value;
+    return isDeductionType(type) ? -value : value;
+  }
+
+  function isDeductionType(type) {
+    return type === "PENALTY" || type === "REDEEM";
   }
 
   function startOfDay(value) {

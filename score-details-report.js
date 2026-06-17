@@ -66,7 +66,7 @@ async function loadScoreItems() {
   scoreItems = await requestJson("/api/score-items");
   fields.scoreItemIds.innerHTML = scoreItems
     .map((item) => {
-      const typeLabel = item.type === "REWARD" ? "獎勵" : "懲罰";
+      const typeLabel = getTypeLabel(item.type);
       const scope = item.studentId ? `個別：${getStudentName(item.studentId)}` : "共用";
       return `<option value="${item.id}">[${typeLabel}｜${escapeHtml(scope)}] ${escapeHtml(item.mainCategory)} - ${escapeHtml(item.subCategory)}</option>`;
     })
@@ -185,12 +185,18 @@ function getItemLabel(row) {
 
 function getTypeLabel(type) {
   if (type === "SETTLEMENT") return "結餘";
-  return type === "REWARD" ? "獎勵" : "懲罰";
+  if (type === "REWARD") return "獎勵";
+  if (type === "PENALTY") return "懲罰";
+  if (type === "REDEEM") return "兌換獎品";
+  return type || "-";
 }
 
 function getTypeClass(type) {
   if (type === "SETTLEMENT") return "settlement";
-  return type === "REWARD" ? "reward" : "penalty";
+  if (type === "REWARD") return "reward";
+  if (type === "PENALTY") return "penalty";
+  if (type === "REDEEM") return "redeem";
+  return "";
 }
 
 function getStudentName(studentId) {

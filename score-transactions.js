@@ -32,17 +32,23 @@ const fields = {
 const v2 = {
   rewardBody: document.querySelector("#rewardItemsBody"),
   penaltyBody: document.querySelector("#penaltyItemsBody"),
+  redeemBody: document.querySelector("#redeemItemsBody"),
   rewardPinnedBody: document.querySelector("#rewardPinnedBody"),
   penaltyPinnedBody: document.querySelector("#penaltyPinnedBody"),
+  redeemPinnedBody: document.querySelector("#redeemPinnedBody"),
   emptyReward: document.querySelector("#emptyRewardItems"),
   emptyPenalty: document.querySelector("#emptyPenaltyItems"),
+  emptyRedeem: document.querySelector("#emptyRedeemItems"),
   emptyRewardPinned: document.querySelector("#emptyRewardPinned"),
   emptyPenaltyPinned: document.querySelector("#emptyPenaltyPinned"),
+  emptyRedeemPinned: document.querySelector("#emptyRedeemPinned"),
   rewardCount: document.querySelector("#rewardItemCount"),
   penaltyCount: document.querySelector("#penaltyItemCount"),
+  redeemCount: document.querySelector("#redeemItemCount"),
   saveTopButton: document.querySelector("#saveTopButton"),
   saveRewardButton: document.querySelector("#saveRewardButton"),
   savePenaltyButton: document.querySelector("#savePenaltyButton"),
+  saveRedeemButton: document.querySelector("#saveRedeemButton"),
 };
 
 let students = [];
@@ -76,11 +82,11 @@ window.matchMedia("(max-width: 980px)").addEventListener("change", renderV2ItemT
 v2.saveTopButton.addEventListener("click", saveAllV2Transactions);
 v2.saveRewardButton.addEventListener("click", saveAllV2Transactions);
 v2.savePenaltyButton.addEventListener("click", saveAllV2Transactions);
+v2.saveRedeemButton.addEventListener("click", saveAllV2Transactions);
 
 init();
 
 async function init() {
-  normalizeVisibleLabels();
   fields.v2TransactionDate.value = toDateInputValue(new Date());
   fields.transactionDate.value = toDateInputValue(new Date());
   fields.settlementDate.value = toDateInputValue(new Date());
@@ -89,11 +95,6 @@ async function init() {
   resetTransactionForm();
   renderV2ItemTables();
   await loadTransactions();
-}
-
-function normalizeVisibleLabels() {
-  const title = document.querySelector(".transaction-v2 h2");
-  if (title) title.textContent = "點數異動";
 }
 
 async function loadStudents() {
@@ -159,11 +160,11 @@ function renderScoreItemOptions() {
     .filter((item) => item.type === type)
     .filter((item) => !item.studentId || item.studentId === studentId)
     .map((item) => {
-      const scope = item.studentId ? "個別" : "共用";
+      const scope = item.studentId ? "個人" : "共用";
       return `<option value="${item.id}">[${scope}] ${escapeHtml(getItemName(item))}</option>`;
     })
     .join("");
-  fields.scoreItemId.innerHTML = options || `<option value="">沒有可使用項目</option>`;
+  fields.scoreItemId.innerHTML = options || `<option value="">沒有可用項目</option>`;
 }
 
 function renderV2ItemTables() {
@@ -171,29 +172,42 @@ function renderV2ItemTables() {
   const availableItems = studentId
     ? scoreItems.filter((item) => !item.studentId || item.studentId === studentId)
     : [];
-  const rewardItems = availableItems.filter((item) => item.type === "REWARD");
-  const penaltyItems = availableItems.filter((item) => item.type === "PENALTY");
-  const pinnedRewardItems = rewardItems.filter((item) => item.isPinned);
-  const pinnedPenaltyItems = penaltyItems.filter((item) => item.isPinned);
-  const regularRewardItems = rewardItems.filter((item) => !item.isPinned);
-  const regularPenaltyItems = penaltyItems.filter((item) => !item.isPinned);
+  const groups = {
+    REWARD: splitPinned(availableItems.filter((item) => item.type === "REWARD")),
+    PENALTY: splitPinned(availableItems.filter((item) => item.type === "PENALTY")),
+    REDEEM: splitPinned(availableItems.filter((item) => item.type === "REDEEM")),
+  };
 
-  renderPinnedRows(v2.rewardPinnedBody, pinnedRewardItems);
-  renderPinnedRows(v2.penaltyPinnedBody, pinnedPenaltyItems);
-  renderV2Rows(v2.rewardBody, regularRewardItems);
-  renderV2Rows(v2.penaltyBody, regularPenaltyItems);
-  v2.emptyRewardPinned.classList.toggle("hidden", pinnedRewardItems.length > 0);
-  v2.emptyPenaltyPinned.classList.toggle("hidden", pinnedPenaltyItems.length > 0);
-  v2.emptyReward.classList.toggle("hidden", regularRewardItems.length > 0);
-  v2.emptyPenalty.classList.toggle("hidden", regularPenaltyItems.length > 0);
-  v2.rewardCount.textContent = `${rewardItems.length} 個項目`;
-  v2.penaltyCount.textContent = `${penaltyItems.length} 個項目`;
+  renderPinnedRows(v2.rewardPinnedBody, groups.REWARD.pinned);
+  renderPinnedRows(v2.penaltyPinnedBody, groups.PENALTY.pinned);
+  renderPinnedRows(v2.redeemPinnedBody, groups.REDEEM.pinned);
+  renderV2Rows(v2.rewardBody, groups.REWARD.regular);
+  renderV2Rows(v2.penaltyBody, groups.PENALTY.regular);
+  renderV2Rows(v2.redeemBody, groups.REDEEM.regular);
+
+  v2.emptyRewardPinned.classList.toggle("hidden", groups.REWARD.pinned.length > 0);
+  v2.emptyPenaltyPinned.classList.toggle("hidden", groups.PENALTY.pinned.length > 0);
+  v2.emptyRedeemPinned.classList.toggle("hidden", groups.REDEEM.pinned.length > 0);
+  v2.emptyReward.classList.toggle("hidden", groups.REWARD.regular.length > 0);
+  v2.emptyPenalty.classList.toggle("hidden", groups.PENALTY.regular.length > 0);
+  v2.emptyRedeem.classList.toggle("hidden", groups.REDEEM.regular.length > 0);
+  v2.rewardCount.textContent = `${groups.REWARD.all.length} 個項目`;
+  v2.penaltyCount.textContent = `${groups.PENALTY.all.length} 個項目`;
+  v2.redeemCount.textContent = `${groups.REDEEM.all.length} 個項目`;
+}
+
+function splitPinned(items) {
+  return {
+    all: items,
+    pinned: items.filter((item) => item.isPinned),
+    regular: items.filter((item) => !item.isPinned),
+  };
 }
 
 function renderPinnedRows(body, items) {
   body.innerHTML = items.map((item) => `
     <tr>
-      <td data-v2-item="${item.id}"><strong>${escapeHtml(getItemName(item))}</strong><span class="item-scope">${item.studentId ? "個別" : "共用"}</span></td>
+      <td data-v2-item="${item.id}"><strong>${escapeHtml(getItemName(item))}</strong><span class="item-scope">${item.studentId ? "個人" : "共用"}</span></td>
       <td><input class="quantity-input" type="number" min="0" step="1" inputmode="numeric" data-quantity value="" placeholder="0" /></td>
     </tr>
   `).join("");
@@ -225,7 +239,7 @@ function isCompactLayout() {
 }
 
 function renderV2ItemCells(item) {
-  const scope = item.studentId ? "個別" : "共用";
+  const scope = item.studentId ? "個人" : "共用";
   return `
     <td data-v2-item="${item.id}"><span class="type-pill ${getTypeClass(item.type)}">${getTypeLabel(item.type)}</span></td>
     <td><strong>${escapeHtml(getItemName(item))}</strong><span class="item-scope">${scope}</span></td>
@@ -247,7 +261,7 @@ function renderTransactions() {
   const pageResult = AppUI.paginate(filtered, currentPage, pageSize);
   currentPage = pageResult.page;
 
-  transactionCount.textContent = `共 ${filtered.length} 筆異動`;
+  transactionCount.textContent = `共 ${filtered.length} 筆紀錄`;
   emptyTransactions.classList.toggle("hidden", pageResult.items.length > 0);
   transactionsTableBody.innerHTML = pageResult.items.map(renderTransactionRow).join("");
   AppUI.renderPagination(document.querySelector("#transactionPagination"), currentPage, pageResult.totalPages, (page) => {
@@ -293,14 +307,16 @@ async function saveAllV2Transactions() {
   const rows = [
     ...collectV2Rows(v2.rewardPinnedBody, "REWARD"),
     ...collectV2Rows(v2.penaltyPinnedBody, "PENALTY"),
+    ...collectV2Rows(v2.redeemPinnedBody, "REDEEM"),
     ...collectV2Rows(v2.rewardBody, "REWARD"),
     ...collectV2Rows(v2.penaltyBody, "PENALTY"),
+    ...collectV2Rows(v2.redeemBody, "REDEEM"),
   ];
   const invalid = rows.find(({ rawQuantity, quantity }) => rawQuantity !== "" && (!Number.isInteger(quantity) || quantity < 0));
   if (invalid) return showV2FormError("數量必須是 0 或正整數");
 
   const payloads = rows.filter(({ item, quantity }) => item && quantity > 0);
-  if (!payloads.length) return showV2FormError("請至少輸入一個數量");
+  if (!payloads.length) return showV2FormError("請至少輸入一個項目的數量");
 
   AppUI.showLoading("儲存點數異動...");
   try {
@@ -383,7 +399,7 @@ function editTransaction(id) {
   const transaction = transactions.find((entry) => entry.id === id);
   if (!transaction) return;
   if (!transaction.scoreItemId) {
-    AppUI.toast("結餘異動請重新新增結餘調整", "error");
+    AppUI.toast("結餘紀錄請用新增結餘方式調整。", "error");
     return;
   }
   fields.transactionId.value = transaction.id;
@@ -420,7 +436,7 @@ async function saveSettlement(event) {
     });
     settlementForm.reset();
     fields.settlementDate.value = toDateInputValue(new Date());
-    AppUI.toast("結餘已儲存");
+    AppUI.toast("結餘已新增");
     await Promise.all([loadStudents(), loadTransactions()]);
   } catch (error) {
     showSettlementError(error.message);
@@ -432,7 +448,7 @@ async function saveSettlement(event) {
 
 async function deleteTransaction(id) {
   const transaction = transactions.find((entry) => entry.id === id);
-  if (!transaction || !confirm("確定要刪除此筆點數異動？")) return;
+  if (!transaction || !confirm("確定要刪除這筆點數異動嗎？")) return;
   AppUI.showLoading("刪除點數異動...");
   try {
     await requestJson(`/api/score-transactions/${id}`, { method: "DELETE" });
@@ -516,26 +532,32 @@ function getItemName(item) {
 
 function getTypeLabel(type) {
   if (type === "SETTLEMENT") return "結餘";
-  return type === "REWARD" ? "獎勵" : "懲罰";
+  if (type === "REWARD") return "獎勵";
+  if (type === "PENALTY") return "懲罰";
+  if (type === "REDEEM") return "兌換獎品";
+  return type || "-";
 }
 
 function getTypeClass(type) {
   if (type === "SETTLEMENT") return "settlement";
-  return type === "REWARD" ? "reward" : "penalty";
+  if (type === "REWARD") return "reward";
+  if (type === "PENALTY") return "penalty";
+  if (type === "REDEEM") return "redeem";
+  return "";
 }
 
 function clearAllV2Quantities() {
-  v2.rewardPinnedBody.querySelectorAll("[data-quantity]").forEach((input) => {
-    input.value = "";
-  });
-  v2.penaltyPinnedBody.querySelectorAll("[data-quantity]").forEach((input) => {
-    input.value = "";
-  });
-  v2.rewardBody.querySelectorAll("[data-quantity]").forEach((input) => {
-    input.value = "";
-  });
-  v2.penaltyBody.querySelectorAll("[data-quantity]").forEach((input) => {
-    input.value = "";
+  [
+    v2.rewardPinnedBody,
+    v2.penaltyPinnedBody,
+    v2.redeemPinnedBody,
+    v2.rewardBody,
+    v2.penaltyBody,
+    v2.redeemBody,
+  ].forEach((body) => {
+    body.querySelectorAll("[data-quantity]").forEach((input) => {
+      input.value = "";
+    });
   });
 }
 
@@ -603,7 +625,7 @@ function isValidDate(value) {
 }
 
 function escapeHtml(value) {
-  return String(value)
+  return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")

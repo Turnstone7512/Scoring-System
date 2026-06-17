@@ -13,36 +13,23 @@ const fields = {
 };
 
 let auditLogs = [];
+let students = [];
+let studentNameById = new Map();
 let searchTerm = "";
 let currentPage = 1;
 const pageSize = 8;
 
-const fieldLabels = {
-  type: "類型",
-  student_id: "適用學生",
-  main_category: "主項目",
-  sub_category: "子項目",
-  image_url: "圖片網址",
-  score: "點數",
-  is_pinned: "置頂",
-  is_deleted: "刪除狀態",
-  created_at: "建立時間",
-  updated_at: "最後異動時間",
-  name: "姓名",
-  grade: "年級",
-  class_no: "座號",
-  email: "Email",
-  photo_url: "照片網址",
-  current_score: "目前點數",
-  last_transaction_at: "最後點數異動",
-  student_id_transaction: "學生",
-  score_item_id: "項目",
-  score_change: "異動點數",
-  settlement_score: "結餘點數",
-  running_total_score: "異動後點數",
-  transaction_date: "生效日期",
-  display_name: "顯示名稱",
-  role: "角色",
+const tableLabels = {
+  Student: "學生資料",
+  ScoreItem: "獎懲項目類",
+  ScoreTransaction: "學生點數類",
+  UserAccount: "使用者帳號",
+};
+
+const actionLabels = {
+  CREATE: "新增",
+  UPDATE: "修改",
+  DELETE: "刪除",
 };
 
 insertAuditControls();
@@ -62,6 +49,7 @@ init();
 
 async function init() {
   applyInitialQueryParams();
+  await loadStudents();
   await loadAuditLogs();
 }
 
@@ -72,6 +60,16 @@ function applyInitialQueryParams() {
   fields.dateFrom.value = params.get("dateFrom") || "";
   fields.dateTo.value = params.get("dateTo") || "";
   fields.recordId.value = params.get("recordId") || "";
+}
+
+async function loadStudents() {
+  try {
+    students = await requestJson("/api/students");
+    studentNameById = new Map(students.map((student) => [String(student.id), student.name]));
+  } catch (error) {
+    students = [];
+    studentNameById = new Map();
+  }
 }
 
 async function loadAuditLogs() {
@@ -101,7 +99,7 @@ async function loadAuditLogs() {
 function insertAuditControls() {
   document.querySelector("#auditList").insertAdjacentHTML("beforebegin", `
     <div class="utility-row">
-      <input id="auditKeywordSearch" class="table-search" type="search" placeholder="搜尋資料表、recordId 或異動內容" />
+      <input id="auditKeywordSearch" class="table-search" type="search" placeholder="搜尋資料類型、recordId 或異動內容" />
       <div id="auditPagination" class="pagination"></div>
     </div>
   `);
@@ -130,49 +128,123 @@ function renderAuditLogs() {
 }
 
 function renderAuditLogCard(log) {
-  const fieldsToRender = getAuditFields(log.oldValue, log.newValue);
+  const spec = getTableSpec(log.tableName);
   return `
     <article class="audit-card">
       <div class="audit-card-header">
         <div>
           <h3>${formatDate(log.createdAt)}</h3>
-          <p class="meta">資料表：${escapeHtml(log.tableName)}，recordId：${escapeHtml(log.recordId)}</p>
+          <p class="meta">資料類型：${escapeHtml(tableLabels[log.tableName] || log.tableName)}，recordId：${escapeHtml(log.recordId || "-")}</p>
         </div>
-        <span class="action-pill ${String(log.action).toLowerCase()}">${escapeHtml(log.action)}</span>
+        <span class="action-pill ${String(log.action).toLowerCase()}">${escapeHtml(actionLabels[log.action] || log.action)}</span>
       </div>
-      <div class="change-stack">
-        <section class="change-block">
-          <h4>異動前</h4>
-          ${renderPlainTextFields(fieldsToRender, log.oldValue, log.oldValue, log.newValue)}
-        </section>
-        <section class="change-block">
-          <h4>異動後</h4>
-          ${renderPlainTextFields(fieldsToRender, log.newValue, log.oldValue, log.newValue)}
-        </section>
+      <div class="audit-table-wrap">
+        <table class="audit-change-table">
+          <thead>
+            <tr>
+              <th>狀態</th>
+              ${spec.map((column) => `<th>${escapeHtml(column.label)}</th>`).join("")}
+            </tr>
+          </thead>
+          <tbody>
+            ${renderChangeRow("修改前", spec, log.oldValue, log.oldValue, log.newValue)}
+            ${renderChangeRow("修改後", spec, log.newValue, log.oldValue, log.newValue)}
+          </tbody>
+        </table>
       </div>
     </article>
   `;
 }
 
-function renderPlainTextFields(fieldsToRender, value, oldValue, newValue) {
-  if (!fieldsToRender.length) return `<p class="field-line unchanged">無資料</p>`;
-  return fieldsToRender.map((field) => {
-    const changed = normalizeValue(oldValue?.[field]) !== normalizeValue(newValue?.[field]);
-    const className = changed ? "changed" : "unchanged";
-    return `<p class="field-line ${className}"><span>${escapeHtml(getFieldLabel(field))}</span>：${escapeHtml(formatPlainValue(value?.[field]))}</p>`;
-  }).join("");
+function renderChangeRow(label, spec, value, oldValue, newValue) {
+  return `
+    <tr>
+      <th>${label}</th>
+      ${spec.map((column) => {
+        const oldDisplay = column.value(oldValue);
+        const newDisplay = column.value(newValue);
+        const className = normalizeValue(oldDisplay) !== normalizeValue(newDisplay) ? "changed" : "unchanged";
+        return `<td class="${className}">${escapeHtml(column.value(value))}</td>`;
+      }).join("")}
+    </tr>
+  `;
 }
 
-function getAuditFields(oldValue, newValue) {
-  const keys = new Set([
-    ...Object.keys(oldValue || {}),
-    ...Object.keys(newValue || {}),
-  ]);
-  return [...keys].filter((key) => !["id"].includes(key));
+function getTableSpec(tableName) {
+  if (tableName === "Student") {
+    return [
+      { label: "建立時間", value: (value) => formatDate(readValue(value, "created_at", "createdAt")) },
+      { label: "姓名", value: (value) => readValue(value, "name") },
+      { label: "座號", value: (value) => readValue(value, "class_no", "classNo") },
+      { label: "目前點數", value: (value) => readValue(value, "current_score", "currentScore") },
+      { label: "照片網址", value: (value) => readValue(value, "photo_url", "photoUrl") },
+      { label: "是否有效", value: (value) => formatActive(value) },
+    ];
+  }
+
+  if (tableName === "ScoreItem") {
+    return [
+      { label: "建立時間", value: (value) => formatDate(readValue(value, "created_at", "createdAt")) },
+      { label: "適用學生", value: (value) => formatApplicableStudent(value) },
+      { label: "項目-子項目", value: (value) => formatItemName(value) },
+      { label: "點數", value: (value) => readValue(value, "score") },
+      { label: "生效時間", value: (value) => formatDate(readValue(value, "updated_at", "updatedAt", "created_at", "createdAt")) },
+      { label: "是否有效", value: (value) => formatActive(value) },
+    ];
+  }
+
+  if (tableName === "ScoreTransaction") {
+    return [
+      { label: "建立時間", value: (value) => formatDate(readValue(value, "updated_at", "updatedAt", "created_at", "createdAt")) },
+      { label: "學生姓名", value: (value) => formatStudentName(value) },
+      { label: "結餘點數", value: (value) => readValue(value, "settlement_score", "settlementScore", "running_total_score", "runningTotalScore") },
+      { label: "生效時間", value: (value) => formatDate(readValue(value, "transaction_date", "transactionDate")) },
+      { label: "是否有效", value: (value) => formatActive(value) },
+    ];
+  }
+
+  return [
+    { label: "建立時間", value: (value) => formatDate(readValue(value, "created_at", "createdAt")) },
+    { label: "內容", value: (value) => formatAuditSearchText(value) || "-" },
+  ];
 }
 
-function getFieldLabel(field) {
-  return fieldLabels[field] || field;
+function formatApplicableStudent(value) {
+  const studentId = readValue(value, "student_id", "studentId");
+  if (!studentId) return "共用";
+  return studentNameById.get(String(studentId)) || studentId;
+}
+
+function formatStudentName(value) {
+  const nestedName = readValue(value?.student, "name");
+  if (nestedName) return nestedName;
+  const studentId = readValue(value, "student_id", "studentId");
+  if (!studentId) return "-";
+  return studentNameById.get(String(studentId)) || studentId;
+}
+
+function formatItemName(value) {
+  const mainCategory = readValue(value, "main_category", "mainCategory");
+  const subCategory = readValue(value, "sub_category", "subCategory");
+  if (!mainCategory && !subCategory) return "-";
+  if (!subCategory) return mainCategory;
+  if (!mainCategory) return subCategory;
+  return `${mainCategory} - ${subCategory}`;
+}
+
+function formatActive(value) {
+  if (value === null || value === undefined) return "-";
+  const isDeleted = readValue(value, "is_deleted", "isDeleted");
+  if (isDeleted === null || isDeleted === undefined || isDeleted === "") return "-";
+  return isTruthy(isDeleted) ? "否" : "是";
+}
+
+function readValue(value, ...keys) {
+  if (value === null || value === undefined) return "";
+  for (const key of keys) {
+    if (value[key] !== null && value[key] !== undefined && value[key] !== "") return value[key];
+  }
+  return "";
 }
 
 function formatAuditSearchText(value) {
@@ -186,11 +258,8 @@ function normalizeValue(value) {
   return String(value);
 }
 
-function formatPlainValue(value) {
-  if (value === null || value === undefined || value === "") return "-";
-  if (typeof value === "boolean") return value ? "是" : "否";
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
+function isTruthy(value) {
+  return value === true || value === "true" || value === 1 || value === "1";
 }
 
 async function requestJson(url, options = {}) {
@@ -202,11 +271,14 @@ async function requestJson(url, options = {}) {
 
 function formatDate(value) {
   if (!value) return "-";
-  return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
 function escapeHtml(value) {
-  return String(value)
+  const safeValue = value === null || value === undefined || value === "" ? "-" : value;
+  return String(safeValue)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")

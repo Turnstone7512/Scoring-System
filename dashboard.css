@@ -120,6 +120,32 @@
   stroke-width: 1;
 }
 
+.chart-zero-line {
+  stroke: #dc2626;
+  stroke-dasharray: 5 5;
+  stroke-width: 1;
+}
+
+.chart-zero-label {
+  fill: #dc2626;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.chart-axis-break {
+  fill: none;
+  stroke: #64748b;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.chart-break-guide {
+  stroke: #cbd5e1;
+  stroke-dasharray: 3 6;
+  stroke-width: 1;
+}
+
 .chart-line {
   fill: none;
   stroke-linecap: round;
@@ -152,5 +178,11 @@
   display: inline-block;
   height: 10px;
   width: 10px;
+}
+
+.chart-note {
+  color: var(--muted);
+  font-size: 0.86rem;
+  margin: 8px 0 0;
 }
 

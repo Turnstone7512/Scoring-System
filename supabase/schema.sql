@@ -28,7 +28,7 @@ create unique index if not exists students_email_unique_active
 
 create table if not exists public.score_items (
   id uuid primary key default gen_random_uuid(),
-  type text not null check (type in ('REWARD', 'PENALTY')),
+  type text not null check (type in ('REWARD', 'PENALTY', 'REDEEM')),
   student_id uuid references public.students(id),
   main_category text not null,
   sub_category text not null,
@@ -44,7 +44,7 @@ create table if not exists public.score_transactions (
   id uuid primary key default gen_random_uuid(),
   student_id uuid not null references public.students(id),
   score_item_id uuid references public.score_items(id),
-  type text not null check (type in ('REWARD', 'PENALTY', 'SETTLEMENT')),
+  type text not null check (type in ('REWARD', 'PENALTY', 'REDEEM', 'SETTLEMENT')),
   score_change integer not null,
   settlement_score integer,
   running_total_score integer not null default 0,
@@ -65,6 +65,13 @@ alter table public.score_items
 
 alter table public.score_items
   add column if not exists is_pinned boolean not null default false;
+
+alter table public.score_items
+  drop constraint if exists score_items_type_check;
+
+alter table public.score_items
+  add constraint score_items_type_check
+  check (type in ('REWARD', 'PENALTY', 'REDEEM'));
 
 create index if not exists score_items_student_id_idx
   on public.score_items (student_id);
@@ -253,7 +260,7 @@ alter table public.score_transactions
 
 alter table public.score_transactions
   add constraint score_transactions_type_check
-  check (type in ('REWARD', 'PENALTY', 'SETTLEMENT'));
+  check (type in ('REWARD', 'PENALTY', 'REDEEM', 'SETTLEMENT'));
 
 create or replace function public.recalc_student_totals_(p_student_id uuid)
 returns void
