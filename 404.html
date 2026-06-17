@@ -1,35 +1,32 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>?頧?銝?/title>
+    <title>頁面不存在</title>
+    <link rel="stylesheet" href="styles.css?v=20260617-0145" />
     <script>
       const routes = {
-        "": "index.html",
         "/": "index.html",
+        "/Scoring-System": "index.html",
+        "/Scoring-System/": "index.html",
         "/students": "students.html",
         "/score-items": "score-items.html",
         "/score-transactions": "score-transactions.html",
+        "/score-details-report": "score-details-report.html",
         "/reports/score-details": "score-details-report.html",
         "/audit-logs": "audit-logs.html",
       };
-
-      const projectBase = "/Scoring-System";
-      const pathname = window.location.pathname;
-      const routePath = pathname.startsWith(projectBase)
-        ? pathname.slice(projectBase.length) || "/"
-        : pathname;
-      const target = routes[routePath];
-
-      if (target) {
-        const base = pathname.startsWith(projectBase) ? `${projectBase}/` : "";
-        window.location.replace(`${base}${target}${window.location.search}${window.location.hash}`);
-      }
+      const path = window.location.pathname.replace(/^\/Scoring-System/, "") || "/";
+      if (routes[path]) window.location.replace(`${routes[path]}${window.location.search}${window.location.hash}`);
     </script>
   </head>
-  <body>
-    <p>?頧?銝哨??交?????嚗?? <a href="index.html">Dashboard</a>??/p>
+  <body class="theme-dashboard">
+    <main>
+      <section class="dashboard-panel">
+        <h1>頁面不存在</h1>
+        <p>找不到這個頁面，請返回 <a href="index.html">Dashboard</a>。</p>
+      </section>
+    </main>
   </body>
 </html>
-

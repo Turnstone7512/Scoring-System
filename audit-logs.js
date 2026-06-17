@@ -21,8 +21,8 @@ const pageSize = 20;
 
 const tableLabels = {
   Student: "學生資料",
-  ScoreItem: "獎懲項目類",
-  ScoreTransaction: "學生點數類",
+  ScoreItem: "獎懲項目",
+  ScoreTransaction: "學生點數",
   UserAccount: "使用者帳號",
 };
 
@@ -186,18 +186,16 @@ function getTableSpec(tableName) {
       { label: "是否有效", value: (value) => formatActive(value) },
     ];
   }
-
   if (tableName === "ScoreItem") {
     return [
       { label: "建立時間", value: (value) => formatDate(readValue(value, "created_at", "createdAt")) },
       { label: "適用學生", value: (value) => formatApplicableStudent(value) },
-      { label: "項目-子項目", value: (value) => formatItemName(value) },
+      { label: "項目", value: (value) => formatItemName(value) },
       { label: "點數", value: (value) => readValue(value, "score") },
       { label: "生效時間", value: (value) => formatDate(readValue(value, "updated_at", "updatedAt", "created_at", "createdAt")) },
       { label: "是否有效", value: (value) => formatActive(value) },
     ];
   }
-
   if (tableName === "ScoreTransaction") {
     return [
       { label: "建立時間", value: (value) => formatDate(readValue(value, "updated_at", "updatedAt", "created_at", "createdAt")) },
@@ -207,7 +205,6 @@ function getTableSpec(tableName) {
       { label: "是否有效", value: (value) => formatActive(value) },
     ];
   }
-
   return [
     { label: "建立時間", value: (value) => formatDate(readValue(value, "created_at", "createdAt")) },
     { label: "內容", value: (value) => formatAuditSearchText(value) || "-" },

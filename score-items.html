@@ -1,89 +1,54 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>???啣?</title>
-    <link rel="stylesheet" href="styles.css?v=20260617-0140" />
-    <link rel="stylesheet" href="score-items.css?v=20260617-0140" />
+    <title>獎懲項目異動</title>
+    <link rel="stylesheet" href="styles.css?v=20260617-0145" />
+    <link rel="stylesheet" href="score-items.css?v=20260617-0145" />
   </head>
   <body class="theme-score-items">
     <header class="app-header">
-      <div>
-        <h1>???啣?</h1>
-        <p>閮剖???蝵啗??????嚗???拍摮貊??身?箏?具?/p>
-      </div>
+      <div><h1>獎懲項目異動</h1><p>設定獎勵、懲罰與兌換獎品項目，可指定適用學生或設為共用。</p></div>
       <div class="header-actions">
         <a class="secondary-link" href="index.html">Dashboard</a>
-        <a class="secondary-link" href="students.html">摮貊?蝞∠?</a>
-        <a class="secondary-link" href="score-transactions.html">暺?啣?</a>
-        <a class="secondary-link" href="score-details-report.html">暺?敦?梯”</a>
-        <a class="secondary-link" href="audit-logs.html">?啣?蝝??/a>
+        <a class="secondary-link" href="students.html">學生管理</a>
+        <a class="secondary-link" href="score-transactions.html">點數異動</a>
+        <a class="secondary-link" href="score-details-report.html">點數明細報表</a>
+        <a class="secondary-link" href="audit-logs.html">異動紀錄</a>
       </div>
     </header>
     <main class="score-items-page admin-only">
-      <section class="toolbar">
-        <div>
-          <h2>?皜</h2>
-          <p id="scoreItemCount" class="meta">頛銝?..</p>
-        </div>
-        <button id="addScoreItemButton" type="button">?啣??</button>
-      </section>
-      <nav class="tabs" aria-label="?憿?">
-        <button class="tab-button active" type="button" data-filter="ALL">?券</button>
-        <button class="tab-button" type="button" data-filter="REWARD">?</button>
-        <button class="tab-button" type="button" data-filter="PENALTY">?脩蔑</button>
-        <button class="tab-button" type="button" data-filter="REDEEM">????</button>
+      <section class="toolbar"><div><h2>項目清單</h2><p id="scoreItemCount" class="meta">載入中...</p></div><button id="addScoreItemButton" type="button">新增項目</button></section>
+      <nav class="tabs" aria-label="項目類型">
+        <button class="tab-button active" type="button" data-filter="ALL">全部</button>
+        <button class="tab-button" type="button" data-filter="REWARD">獎勵</button>
+        <button class="tab-button" type="button" data-filter="PENALTY">懲罰</button>
+        <button class="tab-button" type="button" data-filter="REDEEM">兌換獎品</button>
       </nav>
       <section class="table-wrap" aria-live="polite">
         <table class="score-item-table">
-          <thead>
-            <tr>
-              <th>憿?</th>
-              <th>?拍摮貊?</th>
-              <th>蝵桅?</th>
-              <th>?</th>
-              <th>暺</th>
-              <th>??</th>
-              <th>?敺??/th>
-              <th>??</th>
-            </tr>
-          </thead>
+          <thead><tr><th>類型</th><th>適用學生</th><th>置頂</th><th>項目</th><th>點數</th><th>圖片</th><th>最後異動</th><th>操作</th></tr></thead>
           <tbody id="scoreItemsTableBody"></tbody>
         </table>
-        <div id="emptyScoreItems" class="empty-state hidden">?桀?瘝??</div>
+        <div id="emptyScoreItems" class="empty-state hidden">目前沒有項目</div>
       </section>
     </main>
-    <section class="score-items-page viewer-only">
-      <div class="empty-state">隢?? Admin 敺?蝬剛風???/div>
-    </section>
+    <section class="score-items-page viewer-only"><div class="empty-state">請切換為 Admin 後再維護項目。</div></section>
     <dialog id="scoreItemDialog" class="modal">
       <form id="scoreItemForm" method="dialog" class="entry-form modal-form">
-        <div class="modal-title">
-          <h2 id="scoreItemFormTitle">?啣??</h2>
-          <button id="closeScoreItemDialog" class="secondary-button icon-button" type="button" aria-label="??">?</button>
-        </div>
+        <div class="modal-title"><h2 id="scoreItemFormTitle">新增項目</h2><button id="closeScoreItemDialog" class="secondary-button icon-button" type="button" aria-label="關閉">×</button></div>
         <input id="scoreItemId" type="hidden" />
-        <label>
-          憿?
-          <select id="type" name="type" required>
-            <option value="REWARD">?</option>
-            <option value="PENALTY">?脩蔑</option>
-            <option value="REDEEM">????</option>
-          </select>
-        </label>
-        <label>?拍摮貊?<select id="studentId" name="studentId"><option value="">??飛???/option></select></label>
-        <label>銝駁???input id="mainCategory" name="mainCategory" type="text" required maxlength="80" /></label>
-        <label>摮???input id="subCategory" name="subCategory" type="text" required maxlength="80" /></label>
-        <label id="imageUrlLabel">??蝬脣?<input id="imageUrl" name="imageUrl" type="url" placeholder="https://example.com/image.jpg" /></label>
-        <label>暺<input id="score" name="score" type="number" min="1" step="1" required /></label>
-        <label class="pinned-checkbox-label"><span>蝵桅?</span><input id="isPinned" name="isPinned" type="checkbox" /></label>
-        <p class="meta">?脩蔑??????頛詨甇??賂?蝟餌絞????箸?????/p>
+        <label>類型<select id="type" name="type" required><option value="REWARD">獎勵</option><option value="PENALTY">懲罰</option><option value="REDEEM">兌換獎品</option></select></label>
+        <label>適用學生<select id="studentId" name="studentId"><option value="">所有學生共用</option></select></label>
+        <label>主項目<input id="mainCategory" name="mainCategory" type="text" required maxlength="80" /></label>
+        <label>子項目<input id="subCategory" name="subCategory" type="text" required maxlength="80" /></label>
+        <label id="imageUrlLabel">圖片網址<input id="imageUrl" name="imageUrl" type="url" placeholder="https://example.com/image.jpg" /></label>
+        <label>點數<input id="score" name="score" type="number" min="1" step="1" required /></label>
+        <label class="pinned-checkbox-label"><span>置頂</span><input id="isPinned" name="isPinned" type="checkbox" /></label>
+        <p class="meta">懲罰與兌換獎品請輸入正整數，系統會自動視為減分項。</p>
         <p id="formError" class="error-text hidden"></p>
-        <div class="form-actions">
-          <button type="submit">?脣?</button>
-          <button id="cancelScoreItemForm" class="secondary-button" type="button">??</button>
-        </div>
+        <div class="form-actions"><button type="submit">儲存</button><button id="cancelScoreItemForm" class="secondary-button" type="button">取消</button></div>
       </form>
     </dialog>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -91,7 +56,6 @@
     <script src="api-client.js?v=20260617-0045"></script>
     <script src="auth.js"></script>
     <script src="ui-utils.js"></script>
-    <script src="score-items.js?v=20260617-0140"></script>
+    <script src="score-items.js?v=20260617-0145"></script>
   </body>
 </html>
-

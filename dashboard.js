@@ -150,37 +150,18 @@ function renderMonthlyChart() {
     <text class="chart-zero-label" x="${width - padding.right + 8}" y="${y(0) + 4}">0</text>
   `;
 
-  const axisBreak = scale.break
-    ? renderAxisBreak(scale.break.y, padding.left, width - padding.right)
-    : "";
-
-  const monthLabels = months.map((month, index) => `
-    <text class="chart-label" x="${x(index)}" y="${height - 18}" text-anchor="middle">${escapeHtml(month)}</text>
-  `).join("");
-
+  const axisBreak = scale.break ? renderAxisBreak(scale.break.y, padding.left, width - padding.right) : "";
+  const monthLabels = months.map((month, index) => `<text class="chart-label" x="${x(index)}" y="${height - 18}" text-anchor="middle">${escapeHtml(month)}</text>`).join("");
   const lines = series.map((student) => {
     const points = student.points.map((point, index) => `${x(index)},${y(Number(point.score || 0))}`).join(" ");
     const dots = student.points.map((point, index) => {
       const score = Number(point.score || 0);
-      return `
-        <circle class="chart-point" cx="${x(index)}" cy="${y(score)}" r="4" style="fill:${escapeHtml(student.color)}">
-          <title>${escapeHtml(student.name)} ${escapeHtml(point.month)}：${score}</title>
-        </circle>
-      `;
+      return `<circle class="chart-point" cx="${x(index)}" cy="${y(score)}" r="4" style="fill:${escapeHtml(student.color)}"><title>${escapeHtml(student.name)} ${escapeHtml(point.month)}：${score}</title></circle>`;
     }).join("");
-    return `
-      <polyline class="chart-line" points="${points}" style="stroke:${escapeHtml(student.color)}"></polyline>
-      ${dots}
-    `;
+    return `<polyline class="chart-line" points="${points}" style="stroke:${escapeHtml(student.color)}"></polyline>${dots}`;
   }).join("");
-
-  const legend = series.map((student) => `
-    <span class="chart-legend-item"><i style="background:${escapeHtml(student.color)}"></i>${escapeHtml(student.name)}</span>
-  `).join("");
-
-  const breakNote = scale.break
-    ? `<p class="chart-note">Y 軸已略過 ${scale.break.start} 到 ${scale.break.end} 的空白區間。</p>`
-    : "";
+  const legend = series.map((student) => `<span class="chart-legend-item"><i style="background:${escapeHtml(student.color)}"></i>${escapeHtml(student.name)}</span>`).join("");
+  const breakNote = scale.break ? `<p class="chart-note">Y 軸已略過 ${scale.break.start} 到 ${scale.break.end} 的空白區間。</p>` : "";
 
   monthlyChart.innerHTML = `
     <div class="chart-scroll">
@@ -202,61 +183,37 @@ function renderMonthlyChart() {
 function createYAxisScale(minValue, maxValue, plotHeight, top) {
   const range = Math.max(1, maxValue - minValue);
   const breakCandidate = findAxisBreak(minValue, maxValue);
-  if (!breakCandidate) {
-    return {
-      y: (value) => top + ((maxValue - value) / range) * plotHeight,
-      break: null,
-    };
-  }
+  if (!breakCandidate) return { y: (value) => top + ((maxValue - value) / range) * plotHeight, break: null };
 
   const breakPixels = 26;
   const visibleRange = Math.max(1, range - breakCandidate.size);
   const pixelsPerUnit = (plotHeight - breakPixels) / visibleRange;
   const breakY = top + (maxValue - breakCandidate.end) * pixelsPerUnit + breakPixels / 2;
   return {
-    y: (value) => {
-      if (value >= breakCandidate.end) {
-        return top + (maxValue - value) * pixelsPerUnit;
-      }
-      return top + (maxValue - breakCandidate.end) * pixelsPerUnit + breakPixels + (breakCandidate.start - value) * pixelsPerUnit;
-    },
-    break: {
-      ...breakCandidate,
-      y: breakY,
-    },
+    y: (value) => value >= breakCandidate.end
+      ? top + (maxValue - value) * pixelsPerUnit
+      : top + (maxValue - breakCandidate.end) * pixelsPerUnit + breakPixels + (breakCandidate.start - value) * pixelsPerUnit,
+    break: { ...breakCandidate, y: breakY },
   };
 }
 
 function findAxisBreak(minValue, maxValue) {
-  const allValues = monthlyScores.students
-    .flatMap((student) => student.points.map((point) => Number(point.score || 0)))
-    .concat([0, minValue, maxValue]);
+  const allValues = monthlyScores.students.flatMap((student) => student.points.map((point) => Number(point.score || 0))).concat([0, minValue, maxValue]);
   const uniqueValues = [...new Set(allValues)].sort((a, b) => a - b);
   let largestGap = null;
   for (let index = 1; index < uniqueValues.length; index += 1) {
     const start = uniqueValues[index - 1];
     const end = uniqueValues[index];
     const size = end - start;
-    if (size > 1000 && (!largestGap || size > largestGap.size)) {
-      largestGap = { start, end, size };
-    }
+    if (size > 1000 && (!largestGap || size > largestGap.size)) largestGap = { start, end, size };
   }
-  if (!largestGap) return null;
-  return {
-    start: largestGap.start,
-    end: largestGap.end,
-    size: largestGap.size,
-  };
+  return largestGap;
 }
 
 function renderAxisBreak(y, axisX, rightX) {
-  const startX = axisX;
-  const endX = rightX;
-  const upperWave = makeWavePath(startX, endX, y - 6);
-  const lowerWave = makeWavePath(startX, endX, y + 6);
   return `
-    <path class="chart-axis-break" d="${upperWave}"></path>
-    <path class="chart-axis-break" d="${lowerWave}"></path>
+    <path class="chart-axis-break" d="${makeWavePath(axisX, rightX, y - 6)}"></path>
+    <path class="chart-axis-break" d="${makeWavePath(axisX, rightX, y + 6)}"></path>
   `;
 }
 
@@ -288,9 +245,7 @@ function makeTicks(minValue, maxValue) {
   const ticks = [];
   const step = niceStep((maxValue - minValue) / 4);
   const firstTick = Math.ceil(minValue / step) * step;
-  for (let value = firstTick; value <= maxValue; value += step) {
-    ticks.push(Math.round(value));
-  }
+  for (let value = firstTick; value <= maxValue; value += step) ticks.push(Math.round(value));
   if (!ticks.includes(minValue)) ticks.unshift(minValue);
   if (!ticks.includes(maxValue)) ticks.push(maxValue);
   return [...new Set(ticks)];
@@ -320,12 +275,7 @@ function getSortValue(student, key) {
 }
 
 function sortLabel(key) {
-  return {
-    name: "學生姓名",
-    classNo: "座號",
-    currentScore: "目前點數",
-    lastTransactionAt: "最後異動時間",
-  }[key] || key;
+  return { name: "學生姓名", classNo: "座號", currentScore: "目前點數", lastTransactionAt: "最後異動時間" }[key] || key;
 }
 
 async function requestJson(url, options = {}) {

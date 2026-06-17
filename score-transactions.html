@@ -1,178 +1,66 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>暺?啣?</title>
-    <link rel="stylesheet" href="styles.css?v=20260617-0140" />
+    <title>點數異動</title>
+    <link rel="stylesheet" href="styles.css?v=20260617-0145" />
     <link rel="stylesheet" href="score-transactions.css?v=20260617-0045" />
   </head>
   <body class="theme-score-transactions">
     <header class="app-header">
-      <div>
-        <h1>暺?啣?</h1>
-        <p>?豢????交??飛??嚗???萸蝵啜?????蝯?蝝??/p>
-      </div>
+      <div><h1>點數異動</h1><p>選擇生效日期與學生後，登錄獎勵、懲罰、兌換獎品或結餘紀錄。</p></div>
       <div class="header-actions">
         <a class="secondary-link" href="index.html">Dashboard</a>
-        <a class="secondary-link" href="students.html">摮貊?蝞∠?</a>
-        <a class="secondary-link admin-only" href="score-items.html">???啣?</a>
-        <a class="secondary-link" href="score-details-report.html">暺?敦?梯”</a>
-        <a class="secondary-link" href="audit-logs.html">?啣?蝝??/a>
+        <a class="secondary-link" href="students.html">學生管理</a>
+        <a class="secondary-link admin-only" href="score-items.html">獎懲項目異動</a>
+        <a class="secondary-link" href="score-details-report.html">點數明細報表</a>
+        <a class="secondary-link" href="audit-logs.html">異動紀錄</a>
       </div>
     </header>
     <main class="transactions-page">
       <section class="entry-form transaction-v2 admin-only">
-        <div class="section-title">
-          <div>
-            <h2>暺?啣?</h2>
-            <p class="meta">?豢????交??飛??嚗撓?亙??????脣???/p>
-          </div>
-        </div>
+        <div class="section-title"><div><h2>點數異動</h2><p class="meta">選擇生效日期與學生後，輸入各項目的數量再儲存。</p></div></div>
         <div class="form-grid transaction-context">
-          <label>???交?<input id="v2TransactionDate" type="date" required /></label>
-          <label>摮貊?<select id="v2StudentId" required></select></label>
+          <label>生效日期<input id="v2TransactionDate" type="date" required /></label>
+          <label>學生<select id="v2StudentId" required></select></label>
         </div>
         <p id="v2FormError" class="error-text hidden"></p>
-
         <section class="pinned-summary">
-          <div class="form-actions top-save-actions"><button id="saveTopButton" type="button">?脣?</button></div>
-          <div class="pinned-entry">
-            <h4>?蝵桅??</h4>
-            <div class="table-wrap" aria-live="polite">
-              <table class="pinned-entry-table">
-                <thead><tr><th>?</th><th>?賊?</th></tr></thead>
-                <tbody id="rewardPinnedBody"></tbody>
-              </table>
-              <div id="emptyRewardPinned" class="empty-state hidden">?桀?瘝?蝵桅???</div>
-            </div>
-          </div>
-          <div class="pinned-entry">
-            <h4>?脩蔑蝵桅??</h4>
-            <div class="table-wrap" aria-live="polite">
-              <table class="pinned-entry-table">
-                <thead><tr><th>?</th><th>?賊?</th></tr></thead>
-                <tbody id="penaltyPinnedBody"></tbody>
-              </table>
-              <div id="emptyPenaltyPinned" class="empty-state hidden">?桀?瘝?蝵桅??脩蔑?</div>
-            </div>
-          </div>
-          <div class="pinned-entry">
-            <h4>????蝵桅??</h4>
-            <div class="table-wrap" aria-live="polite">
-              <table class="pinned-entry-table">
-                <thead><tr><th>?</th><th>?賊?</th></tr></thead>
-                <tbody id="redeemPinnedBody"></tbody>
-              </table>
-              <div id="emptyRedeemPinned" class="empty-state hidden">?桀?瘝?蝵桅??????</div>
-            </div>
-          </div>
+          <div class="form-actions top-save-actions"><button id="saveTopButton" type="button">儲存</button></div>
+          <div class="pinned-entry"><h4>獎勵置頂項目</h4><div class="table-wrap" aria-live="polite"><table class="pinned-entry-table"><thead><tr><th>項目</th><th>數量</th></tr></thead><tbody id="rewardPinnedBody"></tbody></table><div id="emptyRewardPinned" class="empty-state hidden">目前沒有置頂獎勵項目</div></div></div>
+          <div class="pinned-entry"><h4>懲罰置頂項目</h4><div class="table-wrap" aria-live="polite"><table class="pinned-entry-table"><thead><tr><th>項目</th><th>數量</th></tr></thead><tbody id="penaltyPinnedBody"></tbody></table><div id="emptyPenaltyPinned" class="empty-state hidden">目前沒有置頂懲罰項目</div></div></div>
+          <div class="pinned-entry"><h4>兌換獎品置頂項目</h4><div class="table-wrap" aria-live="polite"><table class="pinned-entry-table"><thead><tr><th>項目</th><th>數量</th></tr></thead><tbody id="redeemPinnedBody"></tbody></table><div id="emptyRedeemPinned" class="empty-state hidden">目前沒有置頂兌換獎品項目</div></div></div>
         </section>
-
-        <section class="transaction-block">
-          <div class="section-title compact"><h3>??</h3><p id="rewardItemCount" class="meta"></p></div>
-          <div class="table-wrap" aria-live="polite">
-            <table class="item-entry-table two-column-entry">
-              <thead><tr><th>憿?</th><th>?</th><th>暺</th><th>?賊?</th><th>憿?</th><th>?</th><th>暺</th><th>?賊?</th></tr></thead>
-              <tbody id="rewardItemsBody"></tbody>
-            </table>
-            <div id="emptyRewardItems" class="empty-state hidden">?豢?摮貊?敺????箏雿輻???菟???/div>
-          </div>
-          <div class="form-actions"><button id="saveRewardButton" type="button">?脣?</button></div>
-        </section>
-
-        <section class="transaction-block">
-          <div class="section-title compact"><h3>?脩蔑?</h3><p id="penaltyItemCount" class="meta"></p></div>
-          <div class="table-wrap" aria-live="polite">
-            <table class="item-entry-table two-column-entry">
-              <thead><tr><th>憿?</th><th>?</th><th>暺</th><th>?賊?</th><th>憿?</th><th>?</th><th>暺</th><th>?賊?</th></tr></thead>
-              <tbody id="penaltyItemsBody"></tbody>
-            </table>
-            <div id="emptyPenaltyItems" class="empty-state hidden">?豢?摮貊?敺????箏雿輻?蝵圈???/div>
-          </div>
-          <div class="form-actions"><button id="savePenaltyButton" type="button">?脣?</button></div>
-        </section>
-
-        <section class="transaction-block">
-          <div class="section-title compact"><h3>????</h3><p id="redeemItemCount" class="meta"></p></div>
-          <div class="table-wrap" aria-live="polite">
-            <table class="item-entry-table two-column-entry">
-              <thead><tr><th>憿?</th><th>?</th><th>暺</th><th>?賊?</th><th>憿?</th><th>?</th><th>暺</th><th>?賊?</th></tr></thead>
-              <tbody id="redeemItemsBody"></tbody>
-            </table>
-            <div id="emptyRedeemItems" class="empty-state hidden">?豢?摮貊?敺????箏雿輻????????/div>
-          </div>
-          <div class="form-actions"><button id="saveRedeemButton" type="button">?脣?</button></div>
-        </section>
+        <section class="transaction-block"><div class="section-title compact"><h3>獎勵項目</h3><p id="rewardItemCount" class="meta"></p></div><div class="table-wrap" aria-live="polite"><table class="item-entry-table two-column-entry"><thead><tr><th>類型</th><th>項目</th><th>點數</th><th>數量</th><th>類型</th><th>項目</th><th>點數</th><th>數量</th></tr></thead><tbody id="rewardItemsBody"></tbody></table><div id="emptyRewardItems" class="empty-state hidden">選擇學生後才會列出可使用的獎勵項目</div></div><div class="form-actions"><button id="saveRewardButton" type="button">儲存</button></div></section>
+        <section class="transaction-block"><div class="section-title compact"><h3>懲罰項目</h3><p id="penaltyItemCount" class="meta"></p></div><div class="table-wrap" aria-live="polite"><table class="item-entry-table two-column-entry"><thead><tr><th>類型</th><th>項目</th><th>點數</th><th>數量</th><th>類型</th><th>項目</th><th>點數</th><th>數量</th></tr></thead><tbody id="penaltyItemsBody"></tbody></table><div id="emptyPenaltyItems" class="empty-state hidden">選擇學生後才會列出可使用的懲罰項目</div></div><div class="form-actions"><button id="savePenaltyButton" type="button">儲存</button></div></section>
+        <section class="transaction-block"><div class="section-title compact"><h3>兌換獎品</h3><p id="redeemItemCount" class="meta"></p></div><div class="table-wrap" aria-live="polite"><table class="item-entry-table two-column-entry"><thead><tr><th>類型</th><th>項目</th><th>點數</th><th>數量</th><th>類型</th><th>項目</th><th>點數</th><th>數量</th></tr></thead><tbody id="redeemItemsBody"></tbody></table><div id="emptyRedeemItems" class="empty-state hidden">選擇學生後才會列出可使用的兌換獎品項目</div></div><div class="form-actions"><button id="saveRedeemButton" type="button">儲存</button></div></section>
       </section>
-
       <section class="entry-form transaction-v1 admin-only hidden">
-        <h2 id="transactionFormTitle">暺?啣? v1</h2>
+        <h2 id="transactionFormTitle">點數異動 v1</h2>
         <form id="transactionForm">
           <input id="transactionId" type="hidden" />
           <div class="form-grid">
-            <label>摮貊?<select id="studentId" required></select></label>
-            <label>
-              憿?
-              <select id="type" required>
-                <option value="REWARD">?</option>
-                <option value="PENALTY">?脩蔑</option>
-                <option value="REDEEM">????</option>
-              </select>
-            </label>
-            <label>?<select id="scoreItemId" required></select></label>
-            <label>?賊?<input id="quantity" type="number" min="1" step="1" value="1" required /></label>
-            <label>暺<input id="scoreChange" type="number" min="1" step="1" required /></label>
-            <label>???交?<input id="transactionDate" type="date" required /></label>
+            <label>學生<select id="studentId" required></select></label>
+            <label>類型<select id="type" required><option value="REWARD">獎勵</option><option value="PENALTY">懲罰</option><option value="REDEEM">兌換獎品</option></select></label>
+            <label>項目<select id="scoreItemId" required></select></label>
+            <label>數量<input id="quantity" type="number" min="1" step="1" value="1" required /></label>
+            <label>點數<input id="scoreChange" type="number" min="1" step="1" required /></label>
+            <label>生效日期<input id="transactionDate" type="date" required /></label>
           </div>
           <p id="formError" class="error-text hidden"></p>
-          <div class="form-actions">
-            <button type="submit">?脣?</button>
-            <button id="cancelEditButton" class="secondary-button hidden" type="button">??蝺刻摩</button>
-          </div>
+          <div class="form-actions"><button type="submit">儲存</button><button id="cancelEditButton" class="secondary-button hidden" type="button">取消編輯</button></div>
         </form>
       </section>
-
-      <section class="entry-form admin-only">
-        <h2>蝯??駁?</h2>
-        <form id="settlementForm">
-          <div class="form-grid">
-            <label>摮貊?<select id="settlementStudentId" required></select></label>
-            <label>蝯?暺<input id="settlementScore" type="number" step="1" required /></label>
-            <label>???交?<input id="settlementDate" type="date" required /></label>
-          </div>
-          <p id="settlementError" class="error-text hidden"></p>
-          <div class="form-actions"><button type="submit">?脣?蝯?</button></div>
-        </form>
-      </section>
-
-      <section class="search-panel">
-        <h2>?啣?蝝?閰?/h2>
-        <form id="searchForm" class="form-grid">
-          <label>摮貊?<select id="searchStudentId"></select></label>
-          <label>???交?<input id="dateFrom" type="date" /></label>
-          <label>蝯??交?<input id="dateTo" type="date" /></label>
-          <div class="form-actions"><button type="submit">?亥岷</button><button id="resetSearchButton" class="secondary-button" type="button">?身</button></div>
-        </form>
-      </section>
-
-      <section class="table-section">
-        <div class="section-title"><h2>?啣?蝝??/h2><p id="transactionCount" class="meta">頛銝?..</p></div>
-        <div class="table-wrap" aria-live="polite">
-          <table class="transaction-table">
-            <thead><tr><th>摮貊?</th><th>???交?</th><th>憿?</th><th>?</th><th>?啣?暺</th><th>蝯?暺</th><th>??</th></tr></thead>
-            <tbody id="transactionsTableBody"></tbody>
-          </table>
-          <div id="emptyTransactions" class="empty-state hidden">?桀?瘝?暺?啣?蝝??/div>
-        </div>
-      </section>
+      <section class="entry-form admin-only"><h2>結餘登錄</h2><form id="settlementForm"><div class="form-grid"><label>學生<select id="settlementStudentId" required></select></label><label>結餘點數<input id="settlementScore" type="number" step="1" required /></label><label>生效日期<input id="settlementDate" type="date" required /></label></div><p id="settlementError" class="error-text hidden"></p><div class="form-actions"><button type="submit">儲存結餘</button></div></form></section>
+      <section class="search-panel"><h2>異動紀錄查詢</h2><form id="searchForm" class="form-grid"><label>學生<select id="searchStudentId"></select></label><label>開始日期<input id="dateFrom" type="date" /></label><label>結束日期<input id="dateTo" type="date" /></label><div class="form-actions"><button type="submit">查詢</button><button id="resetSearchButton" class="secondary-button" type="button">重設</button></div></form></section>
+      <section class="table-section"><div class="section-title"><h2>異動紀錄</h2><p id="transactionCount" class="meta">載入中...</p></div><div class="table-wrap" aria-live="polite"><table class="transaction-table"><thead><tr><th>學生</th><th>生效日期</th><th>類型</th><th>項目</th><th>異動點數</th><th>結餘點數</th><th>操作</th></tr></thead><tbody id="transactionsTableBody"></tbody></table><div id="emptyTransactions" class="empty-state hidden">目前沒有點數異動紀錄</div></div></section>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="api-client.js?v=20260617-0045"></script>
     <script src="auth.js"></script>
     <script src="ui-utils.js"></script>
-    <script src="score-transactions.js?v=20260617-0140"></script>
+    <script src="score-transactions.js?v=20260617-0145"></script>
   </body>
 </html>
-
