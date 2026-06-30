@@ -340,7 +340,7 @@ function renderSingleChart(rows, key, metric, label, unit) {
     <text class="chart-label" x="${padding.left - 10}" y="${y(tick) + 4}" text-anchor="end">${tick}</text>
   `).join("");
   const bands = renderReferenceBands(chartRows, metric, student, x, y, minValue, maxValue, padding.left, width - padding.right);
-  const labels = chartRows.map((row, index) => renderChartDateLabels(row.measurementDate, x(index), height - 18, index)).join("");
+  const labels = chartRows.map((row, index) => renderChartDateLabels(row.measurementDate, chartRows[index - 1]?.measurementDate, x(index), height - 18, index)).join("");
   const series = renderSeries(chartRows, key, metric, student, lineColor, label, unit, x, y);
 
   return `
@@ -989,12 +989,16 @@ function toDateTime(value) {
   return new Date(parts.year, parts.month - 1, parts.day).getTime();
 }
 
-function renderChartDateLabels(value, x, monthY, index) {
+function renderChartDateLabels(value, previousValue, x, monthY, index) {
   if (!value) return "-";
   const parts = parseDateParts(value);
   if (!parts) return "-";
-  const monthLabel = `<text class="chart-label chart-month-label" x="${x}" y="${monthY}" text-anchor="middle">${parts.month}月</text>`;
-  const shouldShowYear = index === 0 || parts.month === 1;
+  const previousParts = parseDateParts(previousValue);
+  const isFirstInMonth = !previousParts || previousParts.year !== parts.year || previousParts.month !== parts.month;
+  const monthLabel = isFirstInMonth
+    ? `<text class="chart-label chart-month-label" x="${x}" y="${monthY}" text-anchor="middle">${parts.month}月</text>`
+    : "";
+  const shouldShowYear = index === 0 || (parts.month === 1 && isFirstInMonth);
   if (!shouldShowYear) return monthLabel;
   return `
     <text class="chart-label chart-year-label" x="${x}" y="${monthY - 16}" text-anchor="middle">${parts.year}</text>
