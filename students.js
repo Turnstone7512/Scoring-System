@@ -93,13 +93,14 @@ function renderStudents() {
 
   tableBody.querySelectorAll("[data-edit]").forEach((button) => button.addEventListener("click", () => openEditDialog(button.dataset.edit)));
   tableBody.querySelectorAll("[data-delete]").forEach((button) => button.addEventListener("click", () => deleteStudent(button.dataset.delete)));
-  tableBody.querySelectorAll("[data-history]").forEach((button) => button.addEventListener("click", () => openHistory(button.dataset.history)));
 }
 
 function renderStudentRow(student) {
   const photo = student.photoUrl
     ? `<img class="student-photo" src="${escapeHtml(student.photoUrl)}" alt="${escapeHtml(student.name)}">`
     : `<span class="student-photo placeholder">${escapeHtml(String(student.name || "?").slice(0, 1))}</span>`;
+  const lastChangedAt = student.lastTransactionAt || student.updatedAt;
+  const historyUrl = `audit-logs.html?tableName=Student&recordId=${encodeURIComponent(student.id)}`;
 
   return `
     <tr>
@@ -108,12 +109,11 @@ function renderStudentRow(student) {
       <td>${escapeHtml(student.classNo || "-")}</td>
       <td>${escapeHtml(student.email || "-")}</td>
       <td>${student.currentScore || 0}</td>
-      <td>${formatDate(student.lastTransactionAt || student.updatedAt)}</td>
+      <td><a href="${historyUrl}">${formatDateOnly(lastChangedAt)}</a></td>
       <td>
         <div class="card-actions">
           <button type="button" data-edit="${student.id}">編輯</button>
           <button class="danger-button" type="button" data-delete="${student.id}">刪除</button>
-          <button class="secondary-button" type="button" data-history="${student.id}">紀錄</button>
         </div>
       </td>
     </tr>
@@ -250,10 +250,6 @@ async function deleteStudent(id) {
   }
 }
 
-function openHistory(id) {
-  window.location.href = `audit-logs.html?tableName=Student&recordId=${encodeURIComponent(id)}`;
-}
-
 function closeStudentDialog() {
   studentDialog.close();
 }
@@ -302,9 +298,9 @@ async function requestJson(url, options = {}) {
   return data;
 }
 
-function formatDate(value) {
+function formatDateOnly(value) {
   if (!value) return "-";
-  return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(value));
 }
 
 function escapeHtml(value) {

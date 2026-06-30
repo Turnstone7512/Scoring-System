@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>身高體重</title>
+    <link rel="stylesheet" href="styles.css?v=20260629-0020" />
+    <link rel="stylesheet" href="student-measurements.css?v=20260629-0020" />
+  </head>
+  <body class="theme-measurements">
+    <header class="app-header">
+      <div>
+        <h1>身高體重</h1>
+        <p>依學生記錄與查看身高、體重變化。</p>
+      </div>
+      <div class="header-actions">
+        <a class="secondary-link" href="index.html">Dashboard</a>
+        <a class="secondary-link" href="score-transactions.html">點數異動</a>
+        <a class="secondary-link" href="score-details-report.html">點數明細報表</a>
+        <a class="secondary-link" href="audit-logs.html">異動紀錄</a>
+        <a class="secondary-link admin-only" href="score-items.html">獎懲項目異動</a>
+        <a class="secondary-link" href="students.html">學生管理</a>
+        <a class="secondary-link" href="student-measurements.html">身高體重</a>
+      </div>
+    </header>
+    <main class="measurements-page">
+      <section class="measurements-panel">
+        <div class="section-title">
+          <div>
+            <h2>身高體重折線圖</h2>
+            <p class="meta">選擇學生後直接顯示該學生的身高與體重趨勢。</p>
+          </div>
+          <label class="inline-select">學生<select id="chartStudentId"></select></label>
+        </div>
+        <div id="measurementChart" class="measurement-chart" aria-live="polite"></div>
+      </section>
+
+      <section class="measurements-panel admin-only">
+        <div class="section-title">
+          <div>
+            <h2 id="measurementFormTitle">新增身高體重</h2>
+            <p class="meta">身高、體重與量測地點可留空，日期與學生必填。</p>
+          </div>
+        </div>
+        <form id="measurementForm" class="measurement-form">
+          <input id="measurementId" type="hidden" />
+          <label>日期<input id="measurementDate" type="date" required /></label>
+          <label>學生<select id="formStudentId" required></select></label>
+          <label>量測地點<select id="locationSelect"></select></label>
+          <label>自行輸入地點<input id="locationInput" type="text" maxlength="80" placeholder="例如：保健室" /></label>
+          <label>身高（cm）<input id="heightCm" type="number" min="0" max="300" step="0.1" /></label>
+          <label>體重（kg）<input id="weightKg" type="number" min="0" max="300" step="0.1" /></label>
+          <label class="wide-field">備註<input id="note" type="text" maxlength="200" /></label>
+          <p id="measurementFormError" class="error-text hidden"></p>
+          <div class="form-actions">
+            <button type="submit">儲存</button>
+            <button id="cancelMeasurementEdit" class="secondary-button hidden" type="button">取消編輯</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="measurements-panel">
+        <div class="section-title">
+          <div>
+            <h2>身高體重明細</h2>
+            <p id="measurementCount" class="meta">載入中...</p>
+          </div>
+          <label class="inline-select">學生<select id="detailStudentId"></select></label>
+        </div>
+        <div class="table-wrap" aria-live="polite">
+          <table class="measurement-table">
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>學生</th>
+                <th>身高（cm）</th>
+                <th>體重（kg）</th>
+                <th>量測地點</th>
+                <th>備註</th>
+                <th class="admin-only">操作</th>
+              </tr>
+            </thead>
+            <tbody id="measurementTableBody"></tbody>
+          </table>
+          <div id="emptyMeasurements" class="empty-state hidden">目前沒有身高體重紀錄</div>
+        </div>
+      </section>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="api-client.js?v=20260629-0020"></script>
+    <script src="auth.js"></script>
+    <script src="ui-utils.js"></script>
+    <script src="student-measurements.js?v=20260629-0020"></script>
+  </body>
+</html>

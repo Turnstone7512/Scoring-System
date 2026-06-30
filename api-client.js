@@ -39,6 +39,13 @@
     if (match && method === "PUT") return updateStudent(match[1], body);
     if (match && method === "DELETE") return softDelete("students", "Student", match[1]);
 
+    if (path === "/student-measurements" && method === "GET") return listStudentMeasurements(params);
+    if (path === "/student-measurements" && method === "POST") return createStudentMeasurement(body);
+    match = path.match(/^\/student-measurements\/([^/]+)$/);
+    if (match && method === "PUT") return updateStudentMeasurement(match[1], body);
+    if (match && method === "PATCH") return updateStudentMeasurement(match[1], body);
+    if (match && method === "DELETE") return softDelete("student_measurements", "StudentMeasurement", match[1]);
+
     if (path === "/score-items" && method === "GET") return listScoreItems(params.get("type"));
     if (path === "/score-items" && method === "POST") return createScoreItem(body);
     match = path.match(/^\/score-items\/([^/]+)\/audit-logs$/);
@@ -143,6 +150,51 @@
     });
     await audit("Student", id, "UPDATE", existing, updated);
     return mapStudent(updated);
+  }
+
+  async function listStudentMeasurements(params) {
+    let path = "/student_measurements?select=*,student:students(*)&is_deleted=eq.false&order=measurement_date.desc,created_at.desc";
+    if (params.get("studentId")) path += `&student_id=eq.${encodeURIComponent(params.get("studentId"))}`;
+    const rows = await api(path);
+    return rows.map(mapStudentMeasurement);
+  }
+
+  async function createStudentMeasurement(data) {
+    const row = {
+      student_id: data.studentId,
+      measurement_date: data.measurementDate,
+      height_cm: emptyNumberToNull(data.heightCm),
+      weight_kg: emptyNumberToNull(data.weightKg),
+      location: emptyToNull(data.location),
+      note: emptyToNull(data.note),
+    };
+    const [inserted] = await api("/student_measurements?select=*", {
+      method: "POST",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(row),
+    });
+    await audit("StudentMeasurement", inserted.id, "CREATE", null, inserted);
+    return mapStudentMeasurement(inserted);
+  }
+
+  async function updateStudentMeasurement(id, data) {
+    const existing = await getRow("student_measurements", id);
+    const row = {
+      student_id: data.studentId,
+      measurement_date: data.measurementDate,
+      height_cm: emptyNumberToNull(data.heightCm),
+      weight_kg: emptyNumberToNull(data.weightKg),
+      location: emptyToNull(data.location),
+      note: emptyToNull(data.note),
+      updated_at: new Date().toISOString(),
+    };
+    const [updated] = await api(`/student_measurements?id=eq.${encodeURIComponent(id)}&select=*`, {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(row),
+    });
+    await audit("StudentMeasurement", id, "UPDATE", existing, updated);
+    return mapStudentMeasurement(updated);
   }
 
   async function listScoreItems(type) {
@@ -462,6 +514,22 @@
     };
   }
 
+  function mapStudentMeasurement(row) {
+    return {
+      id: row.id,
+      studentId: row.student_id,
+      measurementDate: row.measurement_date,
+      heightCm: row.height_cm === null || row.height_cm === undefined ? null : Number(row.height_cm),
+      weightKg: row.weight_kg === null || row.weight_kg === undefined ? null : Number(row.weight_kg),
+      location: row.location,
+      note: row.note,
+      isDeleted: row.is_deleted,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      student: row.student ? mapStudent(row.student) : null,
+    };
+  }
+
   function mapAuditLog(row) {
     return {
       id: row.id,
@@ -525,6 +593,12 @@
   function emptyToNull(value) {
     const result = text(value);
     return result ? result : null;
+  }
+
+  function emptyNumberToNull(value) {
+    if (value === null || value === undefined || value === "") return null;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
   }
 
   function text(value) {

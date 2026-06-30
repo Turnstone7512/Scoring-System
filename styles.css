@@ -61,6 +61,13 @@
   --soft: #d9f7df;
 }
 
+.theme-measurements {
+  --bg: #e9fbff;
+  --primary: #0f8aa0;
+  --primary-dark: #0b6879;
+  --soft: #d2f5fb;
+}
+
 * {
   box-sizing: border-box;
 }

@@ -60,6 +60,22 @@ create index if not exists score_transactions_student_id_idx
 create index if not exists score_transactions_transaction_date_idx
   on public.score_transactions (transaction_date desc);
 
+create table if not exists public.student_measurements (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid not null references public.students(id),
+  measurement_date date not null,
+  height_cm numeric(5, 2),
+  weight_kg numeric(5, 2),
+  location text,
+  note text,
+  is_deleted boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists student_measurements_student_date_idx
+  on public.student_measurements (student_id, measurement_date desc);
+
 alter table public.score_items
   add column if not exists student_id uuid references public.students(id);
 
@@ -108,6 +124,7 @@ alter table public.profiles enable row level security;
 alter table public.students enable row level security;
 alter table public.score_items enable row level security;
 alter table public.score_transactions enable row level security;
+alter table public.student_measurements enable row level security;
 alter table public.audit_logs enable row level security;
 
 drop policy if exists "profiles select own or admin" on public.profiles;
@@ -214,6 +231,32 @@ create policy "score_transactions admin delete"
   to authenticated
   using (public.is_admin());
 
+drop policy if exists "student_measurements public read active" on public.student_measurements;
+drop policy if exists "student_measurements admin insert" on public.student_measurements;
+drop policy if exists "student_measurements admin update" on public.student_measurements;
+drop policy if exists "student_measurements admin delete" on public.student_measurements;
+
+create policy "student_measurements public read active"
+  on public.student_measurements for select
+  to anon, authenticated
+  using (is_deleted = false);
+
+create policy "student_measurements admin insert"
+  on public.student_measurements for insert
+  to authenticated
+  with check (public.is_admin());
+
+create policy "student_measurements admin update"
+  on public.student_measurements for update
+  to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+create policy "student_measurements admin delete"
+  on public.student_measurements for delete
+  to authenticated
+  using (public.is_admin());
+
 drop policy if exists "audit_logs public read" on public.audit_logs;
 drop policy if exists "audit_logs admin insert" on public.audit_logs;
 
@@ -237,6 +280,9 @@ grant insert, update, delete on public.score_items to authenticated;
 
 grant select on public.score_transactions to anon, authenticated;
 grant insert, update, delete on public.score_transactions to authenticated;
+
+grant select on public.student_measurements to anon, authenticated;
+grant insert, update, delete on public.student_measurements to authenticated;
 
 grant select on public.audit_logs to anon, authenticated;
 grant insert on public.audit_logs to authenticated;
