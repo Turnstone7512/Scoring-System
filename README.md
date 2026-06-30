@@ -12,6 +12,7 @@ Static frontend for the scoring system. The frontend can be deployed to GitHub P
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| 20260630-0200 | 2026-06-30 | BMI 折線圖標題移除空單位括號，提示文字避免重複 BMI 標註。 |
 | 20260630-0190 | 2026-06-30 | 身高體重折線圖同年月多筆資料時，X 軸月份僅顯示於該月第一筆。 |
 | 20260630-0180 | 2026-06-30 | 修正身高體重公開新增權限，新增 public insert SQL，並避免 audit log 權限阻斷新增。 |
 | 20260630-0170 | 2026-06-30 | 身高體重新增開放 Viewer 使用，修改仍限 Admin，並將 PR 黃色文字調整為橘黃色。 |

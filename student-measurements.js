@@ -310,10 +310,11 @@ function renderChart(rows) {
 
 function renderSingleChart(rows, key, metric, label, unit) {
   const chartRows = rows.filter((row) => row[key] !== null && Number.isFinite(row[key]));
+  const title = unit ? `${label}（${unit}）` : label;
   if (!chartRows.length) {
     return `
       <section class="split-chart">
-        <h3>${label}（${unit}）</h3>
+        <h3>${title}</h3>
         <div class="empty-state chart-empty">目前沒有${label}紀錄</div>
       </section>
     `;
@@ -346,7 +347,7 @@ function renderSingleChart(rows, key, metric, label, unit) {
   return `
     <section class="split-chart">
       <div class="split-chart-title">
-        <h3>${label}（${unit}）</h3>
+        <h3>${title}</h3>
         <span class="chart-legend-item"><i style="background:${lineColor}"></i>${label}</span>
       </div>
     <div class="chart-scroll">
@@ -375,7 +376,10 @@ function renderSeries(rows, key, metric, student, lineColor, label, unit, x, y) 
     const bmi = point.row.bmi ?? calculateBmi(point.row);
     const pointClass = getMeasurementColorClass(student, metric, percentile, bmi, point.value);
     const marker = getChartMarker(student, metric, percentile, bmi, point.value);
-    const tooltip = `${label} ${formatNumber(point.value)}${unit}（${marker}）\n${formatDate(point.row.measurementDate)}`;
+    const valueText = `${label} ${formatNumber(point.value)}${unit}`;
+    const tooltip = metric === "bmi"
+      ? `${valueText}\n${formatDate(point.row.measurementDate)}`
+      : `${valueText}（${marker}）\n${formatDate(point.row.measurementDate)}`;
     return `
     <circle class="chart-point ${pointClass}" cx="${x(point.index)}" cy="${y(point.value)}" r="4">
       <title>${escapeHtml(tooltip)}</title>
