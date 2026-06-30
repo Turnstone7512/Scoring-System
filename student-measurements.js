@@ -9,6 +9,9 @@ const measurementId = document.querySelector("#measurementId");
 const measurementDate = document.querySelector("#measurementDate");
 const locationSelect = document.querySelector("#locationSelect");
 const locationInput = document.querySelector("#locationInput");
+const heightField = document.querySelector("#heightField");
+const weightField = document.querySelector("#weightField");
+const waistField = document.querySelector("#waistField");
 const heightCm = document.querySelector("#heightCm");
 const weightKg = document.querySelector("#weightKg");
 const waistCm = document.querySelector("#waistCm");
@@ -17,6 +20,7 @@ const cancelMeasurementEdit = document.querySelector("#cancelMeasurementEdit");
 const formError = document.querySelector("#measurementFormError");
 const chart = document.querySelector("#measurementChart");
 const downloadChartsButton = document.querySelector("#downloadCharts");
+const tableHead = document.querySelector("#measurementTableHead");
 const tableBody = document.querySelector("#measurementTableBody");
 const emptyMeasurements = document.querySelector("#emptyMeasurements");
 const measurementCount = document.querySelector("#measurementCount");
@@ -126,6 +130,11 @@ const percentileMarks = [3, 25, 50, 75, 97];
 
 chartStudentId.addEventListener("change", syncStudentFilters);
 detailStudentId.addEventListener("change", syncStudentFilters);
+formStudentId.addEventListener("change", () => {
+  chartStudentId.value = formStudentId.value;
+  detailStudentId.value = formStudentId.value;
+  updateMeasurementMode();
+});
 chartLocationFilter.addEventListener("change", syncLocationFilters);
 detailLocationFilter.addEventListener("change", syncLocationFilters);
 downloadChartsButton.addEventListener("click", downloadChartImage);
@@ -173,6 +182,7 @@ function renderStudentOptions() {
   chartStudentId.value = firstStudentId;
   detailStudentId.value = firstStudentId;
   formStudentId.value = firstStudentId;
+  updateMeasurementMode();
 }
 
 async function loadLocationOptions(selectedLocation = "") {
@@ -214,6 +224,8 @@ function syncStudentFilters(event) {
   const studentId = event.target.value;
   chartStudentId.value = studentId;
   detailStudentId.value = studentId;
+  formStudentId.value = studentId;
+  updateMeasurementMode();
   loadPageData();
 }
 
@@ -226,6 +238,13 @@ function syncLocationFilters(event) {
 
 function loadPageData() {
   return Promise.all([loadChart(), loadDetails()]);
+}
+
+function updateMeasurementMode() {
+  const person = getPerson(detailStudentId.value || chartStudentId.value || formStudentId.value);
+  const isAdminPerson = Boolean(person?.isAdminPerson);
+  waistField.classList.toggle("hidden", !isAdminPerson);
+  renderTableHeader(isAdminPerson);
 }
 
 async function loadChart() {
@@ -270,15 +289,21 @@ function filterByLocation(rows, location) {
 function renderChart(rows) {
   const selectedPerson = getPerson(chartStudentId.value);
   const isAdminPerson = selectedPerson?.isAdminPerson;
-  const validRows = rows.filter((row) => row.heightCm !== null || row.weightKg !== null || (isAdminPerson && row.waistCm !== null));
+  const rowsWithBmi = addBmiValues(rows);
+  const validRows = rowsWithBmi.filter((row) => (
+    isAdminPerson
+      ? row.weightKg !== null || row.bmi !== null || row.waistCm !== null
+      : row.heightCm !== null || row.weightKg !== null
+  ));
   if (!validRows.length) {
     chart.innerHTML = `<div class="empty-state chart-empty">這個 Name 目前沒有可繪製的身高體重紀錄</div>`;
     return;
   }
 
   chart.innerHTML = `
-    ${renderSingleChart(validRows, "heightCm", "height", "身高", "cm")}
+    ${isAdminPerson ? "" : renderSingleChart(validRows, "heightCm", "height", "身高", "cm")}
     ${renderSingleChart(validRows, "weightKg", "weight", "體重", "kg")}
+    ${isAdminPerson ? renderSingleChart(validRows, "bmi", "bmi", "BMI", "") : ""}
     ${isAdminPerson ? renderSingleChart(validRows, "waistCm", "waist", "腰圍", "cm") : ""}
   `;
 }
@@ -347,11 +372,9 @@ function renderSeries(rows, key, metric, student, lineColor, label, unit, x, y) 
   const pointText = points.map((point) => `${x(point.index)},${y(point.value)}`).join(" ");
   const dots = points.map((point) => {
     const percentile = estimatePercentile(student, metric, point.value, point.row.measurementDate);
-    const bmi = calculateBmi(point.row);
+    const bmi = point.row.bmi ?? calculateBmi(point.row);
     const pointClass = getMeasurementColorClass(student, metric, percentile, bmi, point.value);
-    const marker = student?.isAdminPerson && (metric === "height" || metric === "weight")
-      ? `BMI ${formatNumber(bmi)}`
-      : formatPercentile(percentile);
+    const marker = getChartMarker(student, metric, percentile, bmi, point.value);
     const tooltip = `${label} ${formatNumber(point.value)}${unit}（${marker}）\n${formatDate(point.row.measurementDate)}`;
     return `
     <circle class="chart-point ${pointClass}" cx="${x(point.index)}" cy="${y(point.value)}" r="4">
@@ -360,6 +383,13 @@ function renderSeries(rows, key, metric, student, lineColor, label, unit, x, y) 
   `;
   }).join("");
   return `<polyline class="chart-line" points="${pointText}" style="stroke:${lineColor}"></polyline>${dots}`;
+}
+
+function getChartMarker(person, metric, percentile, bmi, value) {
+  if (!person?.isAdminPerson) return formatPercentile(percentile);
+  if (metric === "weight" || metric === "bmi") return formatBmi(bmi);
+  if (metric === "waist") return getWaistClassLabel(person, value);
+  return "-";
 }
 
 function renderReferenceBands(rows, metric, student, x, y, minValue, maxValue, left, right) {
@@ -412,28 +442,37 @@ function createTimeScale(rows, left, width) {
 }
 
 function renderDetails() {
-  const sortedRows = [...detailRows].sort((a, b) => new Date(b.measurementDate) - new Date(a.measurementDate));
+  const person = getPerson(detailStudentId.value);
+  const isAdminPerson = Boolean(person?.isAdminPerson);
+  renderTableHeader(isAdminPerson);
+  const sortedRows = addBmiValues([...detailRows].sort((a, b) => new Date(b.measurementDate) - new Date(a.measurementDate)));
   measurementCount.textContent = `共 ${sortedRows.length} 筆紀錄`;
   emptyMeasurements.classList.toggle("hidden", sortedRows.length > 0);
   tableBody.innerHTML = sortedRows.map((row) => {
     const student = getMeasurementPerson(row);
     const heightPercentile = estimatePercentile(student, "height", row.heightCm, row.measurementDate);
     const weightPercentile = estimatePercentile(student, "weight", row.weightKg, row.measurementDate);
-    const bmi = calculateBmi(row);
+    const bmi = row.bmi;
     const heightClass = getMeasurementColorClass(student, "height", heightPercentile, bmi, row.heightCm);
     const weightClass = getMeasurementColorClass(student, "weight", weightPercentile, bmi, row.weightKg);
+    const bmiClass = getBmiClass(bmi);
     const waistClass = getMeasurementColorClass(student, "waist", null, bmi, row.waistCm);
-    const heightMarker = student?.isAdminPerson ? formatBmi(bmi) : formatPercentile(heightPercentile);
-    const weightMarker = student?.isAdminPerson ? formatBmi(bmi) : formatPercentile(weightPercentile);
+    const cells = isAdminPerson ? `
+        <td class="metric-value ${heightClass}">${formatNumber(row.heightCm)}</td>
+        <td class="metric-value ${weightClass}">${formatNumber(row.weightKg)}</td>
+        <td class="pr-cell ${bmiClass}">${formatBmi(bmi)}</td>
+        <td class="metric-value ${waistClass}">${formatNumber(row.waistCm)}</td>
+      ` : `
+        <td class="metric-value ${heightClass}">${formatNumber(row.heightCm)}</td>
+        <td class="pr-cell ${heightClass}">${formatPercentile(heightPercentile)}</td>
+        <td class="metric-value ${weightClass}">${formatNumber(row.weightKg)}</td>
+        <td class="pr-cell ${weightClass}">${formatPercentile(weightPercentile)}</td>
+      `;
     return `
       <tr>
         <td>${formatDate(row.measurementDate)}</td>
         <td>${escapeHtml(student?.name || "-")}</td>
-        <td class="metric-value ${heightClass}">${formatNumber(row.heightCm)}</td>
-        <td class="pr-cell ${heightClass}">${heightMarker}</td>
-        <td class="metric-value ${weightClass}">${formatNumber(row.weightKg)}</td>
-        <td class="pr-cell ${weightClass}">${weightMarker}</td>
-        <td class="metric-value ${waistClass}">${formatNumber(row.waistCm)}</td>
+        ${cells}
         <td>${escapeHtml(row.location || "-")}</td>
         <td>${escapeHtml(row.note || "-")}</td>
         <td class="admin-only"><button class="secondary-button" type="button" data-edit="${row.id}">編輯</button></td>
@@ -445,12 +484,27 @@ function renderDetails() {
   });
 }
 
+function renderTableHeader(isAdminPerson) {
+  const metricHeaders = isAdminPerson
+    ? ["身高（cm）", "體重（kg）", "BMI", "腰圍（cm）"]
+    : ["身高（cm）", "身高 PR", "體重（kg）", "體重 PR"];
+  const headers = [
+    "日期",
+    "Name",
+    ...metricHeaders,
+    "量測地點",
+    "備註",
+  ].map((label) => `<th>${label}</th>`).join("");
+  tableHead.innerHTML = `${headers}<th class="admin-only">操作</th>`;
+}
+
 function openEditMode(id) {
   const row = detailRows.find((entry) => entry.id === id);
   if (!row) return;
   measurementId.value = row.id;
   measurementDate.value = row.measurementDate;
   formStudentId.value = getMeasurementPersonId(row);
+  updateMeasurementMode();
   heightCm.value = row.heightCm ?? "";
   weightKg.value = row.weightKg ?? "";
   waistCm.value = row.waistCm ?? "";
@@ -505,6 +559,7 @@ function resetForm(options = {}) {
   measurementId.value = "";
   measurementDate.value = todayInputValue();
   formStudentId.value = options.keepStudentId || detailStudentId.value || people[0]?.id || "";
+  updateMeasurementMode();
   heightCm.value = "";
   weightKg.value = "";
   waistCm.value = "";
@@ -619,6 +674,7 @@ function getGenderLineColor(student) {
 function getChartBandValues(student, metric, measurementDateValue) {
   if (student?.isAdminPerson) {
     if (metric === "waist") return getWaistThresholds(student);
+    if (metric === "bmi") return [17.5, 18.5, 24, 27, 30];
     return [];
   }
   const entry = getChartBandBoundaries(student, metric, measurementDateValue);
@@ -647,19 +703,38 @@ function getChartBandBoundaries(student, metric, measurementDateValue) {
 }
 
 function renderAdminBands(metric, student, minValue, maxValue, left, right, y) {
-  if (metric !== "waist") return "";
-  const thresholds = getWaistThresholds(student);
-  if (!thresholds.length) return "";
-  const bands = [
-    { className: "band-green", lower: minValue, upper: thresholds[0] },
-    { className: "band-yellow", lower: thresholds[0], upper: thresholds[1] },
-    { className: "band-red", lower: thresholds[1], upper: maxValue },
-  ];
+  const bands = metric === "waist"
+    ? getWaistBands(student, minValue, maxValue)
+    : metric === "bmi"
+      ? getBmiBands(minValue, maxValue)
+      : [];
+  if (!bands.length) return "";
   return bands.map((band) => {
     const upperY = y(clampRange(band.upper, minValue, maxValue));
     const lowerY = y(clampRange(band.lower, minValue, maxValue));
     return `<rect class="chart-band ${band.className}" x="${left}" y="${upperY}" width="${right - left}" height="${Math.max(0, lowerY - upperY)}"></rect>`;
   }).join("");
+}
+
+function getBmiBands(minValue, maxValue) {
+  return [
+    { className: "band-red", lower: minValue, upper: 17.5 },
+    { className: "band-yellow", lower: 17.5, upper: 18.5 },
+    { className: "band-green", lower: 18.5, upper: 24 },
+    { className: "band-yellow", lower: 24, upper: 27 },
+    { className: "band-orange", lower: 27, upper: 30 },
+    { className: "band-red", lower: 30, upper: maxValue },
+  ];
+}
+
+function getWaistBands(student, minValue, maxValue) {
+  const thresholds = getWaistThresholds(student);
+  if (!thresholds.length) return [];
+  return [
+    { className: "band-green", lower: minValue, upper: thresholds[0] },
+    { className: "band-yellow", lower: thresholds[0], upper: thresholds[1] },
+    { className: "band-red", lower: thresholds[1], upper: maxValue },
+  ];
 }
 
 function getWaistThresholds(person) {
@@ -753,8 +828,19 @@ function getMeasurementColorClass(person, metric, percentile, bmi, value) {
   return getPercentileClass(metric, percentile);
 }
 
-function calculateBmi(row) {
-  const height = Number(row.heightCm);
+function addBmiValues(rows) {
+  const ascendingRows = [...rows].sort((a, b) => new Date(a.measurementDate) - new Date(b.measurementDate));
+  let latestHeight = null;
+  const bmiById = new Map();
+  ascendingRows.forEach((row) => {
+    if (Number.isFinite(Number(row.heightCm)) && Number(row.heightCm) > 0) latestHeight = Number(row.heightCm);
+    bmiById.set(row.id, calculateBmi(row, latestHeight));
+  });
+  return rows.map((row) => ({ ...row, bmi: bmiById.get(row.id) ?? null }));
+}
+
+function calculateBmi(row, heightCmValue = row.heightCm) {
+  const height = Number(heightCmValue);
   const weight = Number(row.weightKg);
   if (!Number.isFinite(height) || !Number.isFinite(weight) || height <= 0 || weight <= 0) return null;
   const meters = height / 100;
