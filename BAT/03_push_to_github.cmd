@@ -3,8 +3,8 @@ setlocal EnableExtensions DisableDelayedExpansion
 chcp 65001 >nul
 
 set "REPO_DIR=E:\Programs\GitHub\Scoring-System"
-set "VERSION=20260630-0170"
-set "CHANGE_SUMMARY=身高體重新增免Admin並調整PR橘黃色"
+set "VERSION=20260630-0180"
+set "CHANGE_SUMMARY=修正身高體重公開新增權限"
 set "COMMIT_MESSAGE=%VERSION% - %CHANGE_SUMMARY%"
 
 cd /d "%REPO_DIR%"

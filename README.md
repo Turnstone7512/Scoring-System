@@ -12,6 +12,7 @@ Static frontend for the scoring system. The frontend can be deployed to GitHub P
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| 20260630-0180 | 2026-06-30 | 修正身高體重公開新增權限，新增 public insert SQL，並避免 audit log 權限阻斷新增。 |
 | 20260630-0170 | 2026-06-30 | 身高體重新增開放 Viewer 使用，修改仍限 Admin，並將 PR 黃色文字調整為橘黃色。 |
 | 20260630-0160 | 2026-06-30 | 身高體重頁依學生/管理員切換欄位，管理員改顯示體重、BMI、腰圍並以最近身高計算 BMI。 |
 | 20260630-0150 | 2026-06-30 | Name 下拉選單無資料時改為顯示空白，不再顯示尚無 Name。 |

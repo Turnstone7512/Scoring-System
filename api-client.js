@@ -184,7 +184,7 @@
       headers: { Prefer: "return=representation" },
       body: JSON.stringify(row),
     });
-    await audit("StudentMeasurement", inserted.id, "CREATE", null, inserted);
+    await auditOptional("StudentMeasurement", inserted.id, "CREATE", null, inserted);
     return mapStudentMeasurement(inserted);
   }
 
@@ -459,6 +459,14 @@
         new_value: newValue,
       }),
     });
+  }
+
+  async function auditOptional(tableName, recordId, action, oldValue, newValue) {
+    try {
+      await audit(tableName, recordId, action, oldValue, newValue);
+    } catch (error) {
+      console.warn("Audit log skipped:", error.message);
+    }
   }
 
   async function getRow(table, id) {
