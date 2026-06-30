@@ -15,6 +15,7 @@ const note = document.querySelector("#note");
 const cancelMeasurementEdit = document.querySelector("#cancelMeasurementEdit");
 const formError = document.querySelector("#measurementFormError");
 const chart = document.querySelector("#measurementChart");
+const downloadChartsButton = document.querySelector("#downloadCharts");
 const tableBody = document.querySelector("#measurementTableBody");
 const emptyMeasurements = document.querySelector("#emptyMeasurements");
 const measurementCount = document.querySelector("#measurementCount");
@@ -116,10 +117,11 @@ const growthReference = {
 
 const percentileMarks = [3, 25, 50, 75, 97];
 
-chartStudentId.addEventListener("change", loadChart);
-chartLocationFilter.addEventListener("change", loadChart);
-detailStudentId.addEventListener("change", loadDetails);
-detailLocationFilter.addEventListener("change", loadDetails);
+chartStudentId.addEventListener("change", syncStudentFilters);
+detailStudentId.addEventListener("change", syncStudentFilters);
+chartLocationFilter.addEventListener("change", syncLocationFilters);
+detailLocationFilter.addEventListener("change", syncLocationFilters);
+downloadChartsButton.addEventListener("click", downloadChartImage);
 locationSelect.addEventListener("change", syncLocationInput);
 measurementForm.addEventListener("submit", saveMeasurement);
 cancelMeasurementEdit.addEventListener("click", resetForm);
@@ -171,10 +173,12 @@ function renderLocationOptions(selectedLocation = "") {
     .join("")}`;
   const chartLocationValue = chartLocationFilter.value;
   const detailLocationValue = detailLocationFilter.value;
+  const sharedLocationValue = chartLocationValue || detailLocationValue;
   chartLocationFilter.innerHTML = filterOptions;
   detailLocationFilter.innerHTML = filterOptions;
-  chartLocationFilter.value = locations.includes(chartLocationValue) ? chartLocationValue : "";
-  detailLocationFilter.value = locations.includes(detailLocationValue) ? detailLocationValue : "";
+  const nextLocationValue = locations.includes(sharedLocationValue) ? sharedLocationValue : "";
+  chartLocationFilter.value = nextLocationValue;
+  detailLocationFilter.value = nextLocationValue;
   if (selectedLocation && locations.includes(selectedLocation)) {
     locationSelect.value = selectedLocation;
     locationInput.value = selectedLocation;
@@ -187,6 +191,24 @@ function renderLocationOptions(selectedLocation = "") {
 function syncLocationInput() {
   locationInput.value = locationSelect.value;
   if (!locationSelect.value) locationInput.focus();
+}
+
+function syncStudentFilters(event) {
+  const studentId = event.target.value;
+  chartStudentId.value = studentId;
+  detailStudentId.value = studentId;
+  loadPageData();
+}
+
+function syncLocationFilters(event) {
+  const location = event.target.value;
+  chartLocationFilter.value = location;
+  detailLocationFilter.value = location;
+  loadPageData();
+}
+
+function loadPageData() {
+  return Promise.all([loadChart(), loadDetails()]);
 }
 
 async function loadChart() {
@@ -236,12 +258,12 @@ function renderChart(rows) {
   }
 
   chart.innerHTML = `
-    ${renderSingleChart(validRows, "heightCm", "#0ea5e9", "身高", "cm")}
-    ${renderSingleChart(validRows, "weightKg", "#f97316", "體重", "kg")}
+    ${renderSingleChart(validRows, "heightCm", "height", "#0ea5e9", "身高", "cm")}
+    ${renderSingleChart(validRows, "weightKg", "weight", "#f97316", "體重", "kg")}
   `;
 }
 
-function renderSingleChart(rows, key, color, label, unit) {
+function renderSingleChart(rows, key, metric, color, label, unit) {
   const chartRows = rows.filter((row) => row[key] !== null && Number.isFinite(row[key]));
   if (!chartRows.length) {
     return `
@@ -257,7 +279,9 @@ function renderSingleChart(rows, key, color, label, unit) {
   const padding = { top: 24, right: 32, bottom: 46, left: 54 };
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
-  const values = chartRows.map((row) => row[key]);
+  const student = getStudent(chartStudentId.value);
+  const referenceValues = chartRows.flatMap((row) => getChartBandValues(student, metric, row.measurementDate));
+  const values = [...chartRows.map((row) => row[key]), ...referenceValues];
   const minValue = Math.max(0, Math.floor(Math.min(...values) - 5));
   const maxValue = Math.ceil(Math.max(...values) + 5);
   const range = Math.max(1, maxValue - minValue);
@@ -269,9 +293,8 @@ function renderSingleChart(rows, key, color, label, unit) {
     <line class="chart-grid" x1="${padding.left}" x2="${width - padding.right}" y1="${y(tick)}" y2="${y(tick)}"></line>
     <text class="chart-label" x="${padding.left - 10}" y="${y(tick) + 4}" text-anchor="end">${tick}</text>
   `).join("");
-  const labels = chartRows.map((row, index) => `
-    <text class="chart-label" x="${x(index)}" y="${height - 18}" text-anchor="middle">${escapeHtml(formatChartDateLabel(row.measurementDate))}</text>
-  `).join("");
+  const bands = renderReferenceBands(chartRows, metric, student, x, y, minValue, maxValue, padding.left, width - padding.right);
+  const labels = chartRows.map((row, index) => renderChartDateLabels(row.measurementDate, x(index), height - 18, index)).join("");
   const series = renderSeries(chartRows, key, color, label, x, y);
 
   return `
@@ -282,6 +305,7 @@ function renderSingleChart(rows, key, color, label, unit) {
       </div>
     <div class="chart-scroll">
         <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${label}折線圖">
+        ${bands}
         ${grid}
         <line class="chart-axis" x1="${padding.left}" x2="${padding.left}" y1="${padding.top}" y2="${height - padding.bottom}"></line>
         <line class="chart-axis" x1="${padding.left}" x2="${width - padding.right}" y1="${height - padding.bottom}" y2="${height - padding.bottom}"></line>
@@ -308,6 +332,42 @@ function renderSeries(rows, key, color, label, x, y) {
   return `<polyline class="chart-line" points="${pointText}" style="stroke:${color}"></polyline>${dots}`;
 }
 
+function renderReferenceBands(rows, metric, student, x, y, minValue, maxValue, left, right) {
+  if (!student?.gender) return "";
+  const boundaries = rows.map((row) => getChartBandBoundaries(student, metric, row.measurementDate));
+  if (boundaries.some((entry) => !entry)) return "";
+  const bands = metric === "height"
+    ? [
+        { className: "band-red", lower: (entry) => minValue, upper: (entry) => entry.pr3 },
+        { className: "band-orange", lower: (entry) => entry.pr3, upper: (entry) => entry.pr25 },
+        { className: "band-yellow", lower: (entry) => entry.pr25, upper: (entry) => entry.pr50 },
+        { className: "band-green", lower: (entry) => entry.pr50, upper: (entry) => entry.pr75 },
+        { className: "band-blue", lower: (entry) => entry.pr75, upper: (entry) => maxValue },
+      ]
+    : [
+        { className: "band-red", lower: (entry) => minValue, upper: (entry) => entry.pr1 },
+        { className: "band-orange", lower: (entry) => entry.pr1, upper: (entry) => entry.pr3 },
+        { className: "band-yellow", lower: (entry) => entry.pr3, upper: (entry) => entry.pr25 },
+        { className: "band-green", lower: (entry) => entry.pr25, upper: (entry) => entry.pr50 },
+        { className: "band-yellow", lower: (entry) => entry.pr50, upper: (entry) => entry.pr75 },
+        { className: "band-orange", lower: (entry) => entry.pr75, upper: (entry) => entry.pr97 },
+        { className: "band-red", lower: (entry) => entry.pr97, upper: (entry) => maxValue },
+      ];
+
+  return bands.map((band) => {
+    if (rows.length === 1) {
+      const upperY = y(clampRange(band.upper(boundaries[0]), minValue, maxValue));
+      const lowerY = y(clampRange(band.lower(boundaries[0]), minValue, maxValue));
+      return `<rect class="chart-band ${band.className}" x="${left}" y="${upperY}" width="${right - left}" height="${Math.max(0, lowerY - upperY)}"></rect>`;
+    }
+    const topPoints = rows.map((row, index) => `${x(index)},${y(clampRange(band.upper(boundaries[index]), minValue, maxValue))}`);
+    const bottomPoints = rows
+      .map((row, index) => `${x(index)},${y(clampRange(band.lower(boundaries[index]), minValue, maxValue))}`)
+      .reverse();
+    return `<polygon class="chart-band ${band.className}" points="${[...topPoints, ...bottomPoints].join(" ")}"></polygon>`;
+  }).join("");
+}
+
 function createTimeScale(rows, left, width) {
   const times = rows.map((row) => toDateTime(row.measurementDate));
   const minTime = Math.min(...times);
@@ -325,14 +385,18 @@ function renderDetails() {
   emptyMeasurements.classList.toggle("hidden", sortedRows.length > 0);
   tableBody.innerHTML = sortedRows.map((row) => {
     const student = row.student || getStudent(row.studentId);
+    const heightPercentile = estimatePercentile(student, "height", row.heightCm, row.measurementDate);
+    const weightPercentile = estimatePercentile(student, "weight", row.weightKg, row.measurementDate);
+    const heightClass = getPercentileClass("height", heightPercentile);
+    const weightClass = getPercentileClass("weight", weightPercentile);
     return `
       <tr>
         <td>${formatDate(row.measurementDate)}</td>
         <td>${escapeHtml(student?.name || "-")}</td>
-        <td>${formatNumber(row.heightCm)}</td>
-        <td>${formatPercentile(estimatePercentile(student, "height", row.heightCm, row.measurementDate))}</td>
-        <td>${formatNumber(row.weightKg)}</td>
-        <td>${formatPercentile(estimatePercentile(student, "weight", row.weightKg, row.measurementDate))}</td>
+        <td class="metric-value ${heightClass}">${formatNumber(row.heightCm)}</td>
+        <td class="pr-cell ${heightClass}">${formatPercentile(heightPercentile)}</td>
+        <td class="metric-value ${weightClass}">${formatNumber(row.weightKg)}</td>
+        <td class="pr-cell ${weightClass}">${formatPercentile(weightPercentile)}</td>
         <td>${escapeHtml(row.location || "-")}</td>
         <td>${escapeHtml(row.note || "-")}</td>
         <td class="admin-only"><button class="secondary-button" type="button" data-edit="${row.id}">編輯</button></td>
@@ -450,6 +514,30 @@ function getStudent(studentId) {
   return students.find((student) => student.id === studentId) || null;
 }
 
+function getChartBandValues(student, metric, measurementDateValue) {
+  const entry = getChartBandBoundaries(student, metric, measurementDateValue);
+  if (!entry) return [];
+  return metric === "height"
+    ? [entry.pr3, entry.pr25, entry.pr50, entry.pr75, entry.pr97]
+    : [entry.pr1, entry.pr3, entry.pr25, entry.pr50, entry.pr75, entry.pr97];
+}
+
+function getChartBandBoundaries(student, metric, measurementDateValue) {
+  if (!student?.gender) return null;
+  const age = estimateAge(student, measurementDateValue);
+  const reference = growthReference[student.gender]?.[metric]?.find((row) => row[0] === age);
+  if (!reference) return null;
+  const values = reference.slice(1);
+  return {
+    pr1: estimatePr1(values),
+    pr3: values[0],
+    pr25: values[1],
+    pr50: values[2],
+    pr75: values[3],
+    pr97: values[4],
+  };
+}
+
 function estimatePercentile(student, metric, value, measurementDateValue) {
   if (!student || !student.gender || value === null || value === undefined || value === "") return null;
   const age = estimateAge(student, measurementDateValue);
@@ -495,6 +583,33 @@ function clampPercent(value) {
   return Math.max(0, Math.min(100, value));
 }
 
+function clampRange(value, minValue, maxValue) {
+  return Math.max(minValue, Math.min(maxValue, value));
+}
+
+function estimatePr1(values) {
+  const estimated = values[0] - ((values[1] - values[0]) * 2) / 22;
+  return Math.max(0, estimated);
+}
+
+function getPercentileClass(metric, value) {
+  if (value === null || value === undefined || Number.isNaN(value)) return "";
+  if (metric === "height") {
+    if (value <= 3) return "pr-red";
+    if (value <= 25) return "pr-orange";
+    if (value <= 50) return "pr-yellow";
+    if (value <= 75) return "pr-green";
+    return "pr-blue";
+  }
+  if (value <= 1) return "pr-red";
+  if (value <= 3) return "pr-orange";
+  if (value <= 25) return "pr-yellow";
+  if (value <= 50) return "pr-green";
+  if (value <= 75) return "pr-yellow";
+  if (value <= 97) return "pr-orange";
+  return "pr-red";
+}
+
 function formatPercentile(value) {
   if (value === null || value === undefined || Number.isNaN(value)) return "-";
   return `${Math.round(value)}%`;
@@ -507,17 +622,117 @@ function formatDate(value) {
   return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(parts.year, parts.month - 1, parts.day));
 }
 
+async function downloadChartImage() {
+  const svgs = [...chart.querySelectorAll("svg")];
+  if (!svgs.length) {
+    AppUI.toast("目前沒有可下載的折線圖", "error");
+    return;
+  }
+  const student = getStudent(chartStudentId.value);
+  const locationLabel = chartLocationFilter.value || "全部";
+  const title = "身高體重折線圖";
+  const subtitle = `學生：${student?.name || "-"}　量測地點：${locationLabel}`;
+  const chartImages = svgs.map((svg) => svgToImageBlock(svg));
+  const width = Math.max(900, ...chartImages.map((item) => item.width));
+  const gap = 26;
+  const titleHeight = 82;
+  const height = titleHeight + chartImages.reduce((sum, item) => sum + item.height, 0) + gap * (chartImages.length - 1) + 28;
+  let y = titleHeight;
+  const content = chartImages.map((item) => {
+    const block = `<image href="${item.dataUri}" x="${(width - item.width) / 2}" y="${y}" width="${item.width}" height="${item.height}" />`;
+    y += item.height + gap;
+    return block;
+  }).join("");
+  const combinedSvg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+      <rect width="100%" height="100%" fill="#ffffff" />
+      <text x="32" y="36" font-family="Arial, 'Microsoft JhengHei', sans-serif" font-size="24" font-weight="700" fill="#0f172a">${escapeXml(title)}</text>
+      <text x="32" y="64" font-family="Arial, 'Microsoft JhengHei', sans-serif" font-size="15" fill="#475569">${escapeXml(subtitle)}</text>
+      ${content}
+    </svg>
+  `;
+  const blob = new Blob([combinedSvg], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  try {
+    const image = await loadImage(url);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0);
+    const link = document.createElement("a");
+    link.href = canvas.toDataURL("image/png");
+    link.download = `身高體重折線圖-${student?.name || "student"}-${todayInputValue()}.png`;
+    link.click();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function svgToImageBlock(svg) {
+  const clone = svg.cloneNode(true);
+  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  const viewBox = clone.viewBox.baseVal;
+  const width = Math.ceil(viewBox?.width || svg.getBoundingClientRect().width || 900);
+  const height = Math.ceil(viewBox?.height || svg.getBoundingClientRect().height || 300);
+  clone.setAttribute("width", width);
+  clone.setAttribute("height", height);
+  const style = document.createElement("style");
+  style.textContent = getChartSvgStyles();
+  clone.insertBefore(style, clone.firstChild);
+  const data = new XMLSerializer().serializeToString(clone);
+  return {
+    width,
+    height,
+    dataUri: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(data)}`,
+  };
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
+function getChartSvgStyles() {
+  return `
+    .chart-axis{stroke:#94a3b8;stroke-width:1}
+    .chart-grid{stroke:#e2e8f0;stroke-width:1}
+    .chart-line{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:3}
+    .chart-point{stroke:#ffffff;stroke-width:2}
+    .chart-label{fill:#64748b;font-family:Arial,'Microsoft JhengHei',sans-serif;font-size:12px}
+    .chart-year-label{fill:#0f766e;font-size:11px;font-weight:700}
+    .chart-band{opacity:.18}
+    .band-red{fill:#ef4444}
+    .band-orange{fill:#f97316}
+    .band-yellow{fill:#eab308}
+    .band-green{fill:#22c55e}
+    .band-blue{fill:#3b82f6}
+  `;
+}
+
 function toDateTime(value) {
   const parts = parseDateParts(value);
   if (!parts) return 0;
   return new Date(parts.year, parts.month - 1, parts.day).getTime();
 }
 
-function formatChartDateLabel(value) {
+function renderChartDateLabels(value, x, monthY, index) {
   if (!value) return "-";
   const parts = parseDateParts(value);
   if (!parts) return "-";
-  return parts.month === 1 ? String(parts.year) : `${parts.month}月`;
+  const monthLabel = `<text class="chart-label chart-month-label" x="${x}" y="${monthY}" text-anchor="middle">${parts.month}月</text>`;
+  const shouldShowYear = index === 0 || parts.month === 1;
+  if (!shouldShowYear) return monthLabel;
+  return `
+    <text class="chart-label chart-year-label" x="${x}" y="${monthY - 16}" text-anchor="middle">${parts.year}</text>
+    ${monthLabel}
+  `;
 }
 
 function getMeasurementYear(value) {
@@ -562,4 +777,8 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function escapeXml(value) {
+  return escapeHtml(value);
 }
