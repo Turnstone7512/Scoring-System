@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>身高體重</title>
     <link rel="stylesheet" href="styles.css?v=20260629-0020" />
-    <link rel="stylesheet" href="student-measurements.css?v=20260630-0170" />
+    <link rel="stylesheet" href="student-measurements.css?v=20260630-0230" />
   </head>
   <body class="theme-measurements">
     <header class="app-header">
@@ -24,23 +24,6 @@
       </div>
     </header>
     <main class="measurements-page">
-      <section class="measurements-panel">
-        <div class="section-title">
-          <div>
-            <h2>身高體重折線圖</h2>
-            <p class="meta">選擇學生後直接顯示該學生的身高與體重趨勢。</p>
-          </div>
-          <div class="filter-controls">
-            <label class="inline-select">Name<select id="chartStudentId"></select></label>
-            <label class="inline-select">量測地點<select id="chartLocationFilter"></select></label>
-          </div>
-        </div>
-        <div id="measurementChart" class="measurement-chart" aria-live="polite"></div>
-        <div class="chart-actions">
-          <button id="downloadCharts" class="secondary-button" type="button">下載圖檔</button>
-        </div>
-      </section>
-
       <section class="measurements-panel">
         <div class="section-title">
           <div>
@@ -69,6 +52,23 @@
       <section class="measurements-panel">
         <div class="section-title">
           <div>
+            <h2>身高體重折線圖</h2>
+            <p class="meta">選擇學生後直接顯示該學生的身高與體重趨勢。</p>
+          </div>
+          <div class="filter-controls">
+            <label class="inline-select">Name<select id="chartStudentId"></select></label>
+            <label class="inline-select">量測地點<select id="chartLocationFilter"></select></label>
+          </div>
+        </div>
+        <div id="measurementChart" class="measurement-chart" aria-live="polite"></div>
+        <div class="chart-actions">
+          <button id="downloadCharts" class="secondary-button" type="button">下載圖檔</button>
+        </div>
+      </section>
+
+      <section class="measurements-panel">
+        <div class="section-title">
+          <div>
             <h2>身高體重明細</h2>
             <p id="measurementCount" class="meta">載入中...</p>
           </div>
@@ -78,6 +78,7 @@
           </div>
         </div>
         <div class="table-wrap" aria-live="polite">
+          <div id="detailSuggestion" class="detail-suggestion"></div>
           <table class="measurement-table">
             <thead>
               <tr id="measurementTableHead">
@@ -88,12 +89,33 @@
           <div id="emptyMeasurements" class="empty-state hidden">目前沒有身高體重紀錄</div>
         </div>
       </section>
+      <section class="measurements-panel">
+        <div class="section-title">
+          <div>
+            <h2>臨時計算 PR 值</h2>
+            <p class="meta">僅儲存於此瀏覽器快取，不會寫入資料庫。</p>
+          </div>
+        </div>
+        <form id="temporaryPrForm" class="measurement-form">
+          <label>Name<input id="temporaryPrName" type="text" maxlength="80" /></label>
+          <label>出生年<input id="temporaryPrBirthYear" type="number" min="1900" max="2100" /></label>
+          <label>性別<select id="temporaryPrGender"><option value="">請選擇</option><option value="MALE">男</option><option value="FEMALE">女</option></select></label>
+          <label>身高（cm）<input id="temporaryPrHeight" type="number" min="0" max="300" step="0.1" /></label>
+          <label>體重（kg）<input id="temporaryPrWeight" type="number" min="0" max="300" step="0.1" /></label>
+          <p id="temporaryPrError" class="error-text hidden"></p>
+          <div class="form-actions">
+            <button type="submit">計算</button>
+            <button id="clearTemporaryPr" class="secondary-button" type="button">清除</button>
+          </div>
+        </form>
+        <div id="temporaryPrResult" class="temporary-pr-result empty-state">尚未計算</div>
+      </section>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="api-client.js?v=20260630-0180"></script>
     <script src="auth.js"></script>
     <script src="ui-utils.js"></script>
-    <script src="student-measurements.js?v=20260630-0200"></script>
+    <script src="student-measurements.js?v=20260630-0230"></script>
   </body>
 </html>

@@ -3,8 +3,8 @@ setlocal EnableExtensions DisableDelayedExpansion
 chcp 65001 >nul
 
 set "REPO_DIR=E:\Programs\GitHub\Scoring-System"
-set "VERSION=20260630-0200"
-set "CHANGE_SUMMARY=BMI折線圖移除空括號"
+set "VERSION=20260630-0230"
+set "CHANGE_SUMMARY=身高體重明細上方顯示建議體重"
 set "COMMIT_MESSAGE=%VERSION% - %CHANGE_SUMMARY%"
 
 cd /d "%REPO_DIR%"

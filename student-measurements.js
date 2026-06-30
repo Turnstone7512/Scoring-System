@@ -24,6 +24,18 @@ const tableHead = document.querySelector("#measurementTableHead");
 const tableBody = document.querySelector("#measurementTableBody");
 const emptyMeasurements = document.querySelector("#emptyMeasurements");
 const measurementCount = document.querySelector("#measurementCount");
+const detailSuggestion = document.querySelector("#detailSuggestion");
+const temporaryPrForm = document.querySelector("#temporaryPrForm");
+const temporaryPrFields = {
+  name: document.querySelector("#temporaryPrName"),
+  birthYear: document.querySelector("#temporaryPrBirthYear"),
+  gender: document.querySelector("#temporaryPrGender"),
+  height: document.querySelector("#temporaryPrHeight"),
+  weight: document.querySelector("#temporaryPrWeight"),
+};
+const temporaryPrError = document.querySelector("#temporaryPrError");
+const temporaryPrResult = document.querySelector("#temporaryPrResult");
+const clearTemporaryPr = document.querySelector("#clearTemporaryPr");
 
 let students = [];
 let people = [];
@@ -34,6 +46,7 @@ const adminPeople = [
   { id: "ADMIN:Gink", personType: "ADMIN", personKey: "Gink", name: "Gink", gender: "MALE", isAdminPerson: true },
   { id: "ADMIN:Lelia", personType: "ADMIN", personKey: "Lelia", name: "Lelia", gender: "FEMALE", isAdminPerson: true },
 ];
+const temporaryPrStorageKey = "scoringSystemTemporaryPr";
 
 const growthReference = {
   FEMALE: {
@@ -141,6 +154,8 @@ downloadChartsButton.addEventListener("click", downloadChartImage);
 locationSelect.addEventListener("change", syncLocationInput);
 measurementForm.addEventListener("submit", saveMeasurement);
 cancelMeasurementEdit.addEventListener("click", resetForm);
+temporaryPrForm.addEventListener("submit", calculateTemporaryPr);
+clearTemporaryPr.addEventListener("click", clearTemporaryPrCache);
 
 init();
 
@@ -150,6 +165,7 @@ async function init() {
   try {
     students = await requestJson("/api/students");
     renderStudentOptions();
+    restoreTemporaryPr();
     await loadLocationOptions();
     await Promise.all([loadChart(), loadDetails()]);
   } catch (error) {
@@ -341,6 +357,7 @@ function renderSingleChart(rows, key, metric, label, unit) {
     <text class="chart-label" x="${padding.left - 10}" y="${y(tick) + 4}" text-anchor="end">${tick}</text>
   `).join("");
   const bands = renderReferenceBands(chartRows, metric, student, x, y, minValue, maxValue, padding.left, width - padding.right);
+  const boundaryLabels = renderAdminBoundaryLabels(metric, student, y, minValue, maxValue, width - padding.right + 8);
   const labels = chartRows.map((row, index) => renderChartDateLabels(row.measurementDate, chartRows[index - 1]?.measurementDate, x(index), height - 18, index)).join("");
   const series = renderSeries(chartRows, key, metric, student, lineColor, label, unit, x, y);
 
@@ -356,6 +373,7 @@ function renderSingleChart(rows, key, metric, label, unit) {
         ${grid}
         <line class="chart-axis" x1="${padding.left}" x2="${padding.left}" y1="${padding.top}" y2="${height - padding.bottom}"></line>
         <line class="chart-axis" x1="${padding.left}" x2="${width - padding.right}" y1="${height - padding.bottom}" y2="${height - padding.bottom}"></line>
+        ${boundaryLabels}
         ${labels}
           ${series}
       </svg>
@@ -450,6 +468,7 @@ function renderDetails() {
   const isAdminPerson = Boolean(person?.isAdminPerson);
   renderTableHeader(isAdminPerson);
   const sortedRows = addBmiValues([...detailRows].sort((a, b) => new Date(b.measurementDate) - new Date(a.measurementDate)));
+  renderSuggestedWeightUpper(detailRows);
   measurementCount.textContent = `共 ${sortedRows.length} 筆紀錄`;
   emptyMeasurements.classList.toggle("hidden", sortedRows.length > 0);
   tableBody.innerHTML = sortedRows.map((row) => {
@@ -500,6 +519,16 @@ function renderTableHeader(isAdminPerson) {
     "備註",
   ].map((label) => `<th>${label}</th>`).join("");
   tableHead.innerHTML = `${headers}<th class="admin-only">操作</th>`;
+}
+
+function renderSuggestedWeightUpper(rows) {
+  const latestHeight = getLatestHeight(rows);
+  const suggestedWeightUpper = calculateSuggestedWeightUpper(latestHeight);
+  if (suggestedWeightUpper === null) {
+    detailSuggestion.textContent = "";
+    return;
+  }
+  detailSuggestion.innerHTML = `建議體重上限：<strong>${formatNumber(suggestedWeightUpper)} kg</strong>（依目前最新身高 ${formatNumber(latestHeight)} cm 計算）`;
 }
 
 function openEditMode(id) {
@@ -720,6 +749,29 @@ function renderAdminBands(metric, student, minValue, maxValue, left, right, y) {
   }).join("");
 }
 
+function renderAdminBoundaryLabels(metric, student, y, minValue, maxValue, x) {
+  if (!student?.isAdminPerson) return "";
+  const labels = metric === "bmi"
+    ? [
+        { value: 17.5, className: "threshold-yellow" },
+        { value: 18.5, className: "threshold-green" },
+        { value: 24, className: "threshold-green" },
+        { value: 27, className: "threshold-yellow" },
+        { value: 30, className: "threshold-orange" },
+      ]
+    : metric === "waist"
+      ? getWaistThresholds(student).map((value, index) => ({
+          value,
+          className: index === 0 ? "threshold-yellow" : "threshold-red",
+        }))
+      : [];
+  return labels
+    .filter((entry) => entry.value >= minValue && entry.value <= maxValue)
+    .map((entry) => `
+      <text class="chart-threshold-label ${entry.className}" x="${x}" y="${y(entry.value) + 4}" text-anchor="start">${formatNumber(entry.value)}</text>
+    `).join("");
+}
+
 function getBmiBands(minValue, maxValue) {
   return [
     { className: "band-red", lower: minValue, upper: 17.5 },
@@ -832,6 +884,91 @@ function getMeasurementColorClass(person, metric, percentile, bmi, value) {
   return getPercentileClass(metric, percentile);
 }
 
+function calculateTemporaryPr(event) {
+  event.preventDefault();
+  hideTemporaryPrError();
+  const data = getTemporaryPrData();
+  const validation = validateTemporaryPr(data);
+  if (!validation.valid) return showTemporaryPrError(validation.message);
+  localStorage.setItem(temporaryPrStorageKey, JSON.stringify(data));
+  renderTemporaryPrResult(data);
+}
+
+function getTemporaryPrData() {
+  return {
+    name: temporaryPrFields.name.value.trim(),
+    birthYear: temporaryPrFields.birthYear.value,
+    gender: temporaryPrFields.gender.value,
+    height: temporaryPrFields.height.value,
+    weight: temporaryPrFields.weight.value,
+  };
+}
+
+function validateTemporaryPr(data) {
+  if (!data.name) return { valid: false, message: "請輸入 Name" };
+  if (!data.birthYear || !Number.isInteger(Number(data.birthYear)) || Number(data.birthYear) < 1900 || Number(data.birthYear) > 2100) {
+    return { valid: false, message: "出生年請輸入有效西元年" };
+  }
+  if (!data.gender) return { valid: false, message: "請選擇性別" };
+  if (data.height === "" && data.weight === "") return { valid: false, message: "請至少輸入身高或體重" };
+  if (data.height !== "" && Number(data.height) <= 0) return { valid: false, message: "身高請輸入正數" };
+  if (data.weight !== "" && Number(data.weight) <= 0) return { valid: false, message: "體重請輸入正數" };
+  return { valid: true };
+}
+
+function restoreTemporaryPr() {
+  try {
+    const data = JSON.parse(localStorage.getItem(temporaryPrStorageKey) || "null");
+    if (!data) return;
+    temporaryPrFields.name.value = data.name || "";
+    temporaryPrFields.birthYear.value = data.birthYear || "";
+    temporaryPrFields.gender.value = data.gender || "";
+    temporaryPrFields.height.value = data.height || "";
+    temporaryPrFields.weight.value = data.weight || "";
+    renderTemporaryPrResult(data);
+  } catch {
+    localStorage.removeItem(temporaryPrStorageKey);
+  }
+}
+
+function clearTemporaryPrCache() {
+  localStorage.removeItem(temporaryPrStorageKey);
+  temporaryPrForm.reset();
+  hideTemporaryPrError();
+  temporaryPrResult.className = "temporary-pr-result empty-state";
+  temporaryPrResult.textContent = "尚未計算";
+}
+
+function renderTemporaryPrResult(data) {
+  const age = Math.min(18, Math.max(0, new Date().getFullYear() - Number(data.birthYear)));
+  const person = { gender: data.gender, birthYear: data.birthYear };
+  const measurementDateValue = `${new Date().getFullYear()}-01-01`;
+  const heightPercentile = data.height === "" ? null : estimatePercentile(person, "height", data.height, measurementDateValue);
+  const weightPercentile = data.weight === "" ? null : estimatePercentile(person, "weight", data.weight, measurementDateValue);
+  const heightClass = getPercentileClass("height", heightPercentile);
+  const weightClass = getPercentileClass("weight", weightPercentile);
+  temporaryPrResult.className = "temporary-pr-result";
+  temporaryPrResult.innerHTML = `
+    <div><strong>${escapeHtml(data.name)}</strong>，估算年齡 ${age} 歲</div>
+    <div class="temporary-pr-grid">
+      <span>身高</span>
+      <strong class="${heightClass}">${data.height === "" ? "-" : `${formatNumber(data.height)} cm / ${formatPercentile(heightPercentile)}`}</strong>
+      <span>體重</span>
+      <strong class="${weightClass}">${data.weight === "" ? "-" : `${formatNumber(data.weight)} kg / ${formatPercentile(weightPercentile)}`}</strong>
+    </div>
+  `;
+}
+
+function showTemporaryPrError(message) {
+  temporaryPrError.textContent = message;
+  temporaryPrError.classList.remove("hidden");
+}
+
+function hideTemporaryPrError() {
+  temporaryPrError.textContent = "";
+  temporaryPrError.classList.add("hidden");
+}
+
 function addBmiValues(rows) {
   const ascendingRows = [...rows].sort((a, b) => new Date(a.measurementDate) - new Date(b.measurementDate));
   let latestHeight = null;
@@ -841,6 +978,20 @@ function addBmiValues(rows) {
     bmiById.set(row.id, calculateBmi(row, latestHeight));
   });
   return rows.map((row) => ({ ...row, bmi: bmiById.get(row.id) ?? null }));
+}
+
+function getLatestHeight(rows) {
+  const latestRow = [...rows]
+    .filter((row) => Number.isFinite(Number(row.heightCm)) && Number(row.heightCm) > 0)
+    .sort((a, b) => new Date(b.measurementDate) - new Date(a.measurementDate))[0];
+  return latestRow ? Number(latestRow.heightCm) : null;
+}
+
+function calculateSuggestedWeightUpper(heightCmValue) {
+  const height = Number(heightCmValue);
+  if (!Number.isFinite(height) || height <= 0) return null;
+  const meters = height / 100;
+  return 24 * meters * meters;
 }
 
 function calculateBmi(row, heightCmValue = row.heightCm) {
@@ -971,6 +1122,11 @@ function getChartSvgStyles() {
     .chart-point{stroke:#ffffff;stroke-width:2}
     .chart-label{fill:#64748b;font-family:Arial,'Microsoft JhengHei',sans-serif;font-size:12px}
     .chart-year-label{fill:#0f766e;font-size:11px;font-weight:700}
+    .chart-threshold-label{font-family:Arial,'Microsoft JhengHei',sans-serif;font-size:11px;font-weight:700}
+    .threshold-red{fill:#dc2626}
+    .threshold-orange{fill:#ea580c}
+    .threshold-yellow{fill:#f59e0b}
+    .threshold-green{fill:#16a34a}
     .chart-band{opacity:.18}
     .band-red{fill:#ef4444}
     .band-orange{fill:#f97316}

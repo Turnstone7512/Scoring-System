@@ -187,6 +187,27 @@
   fill: var(--muted);
 }
 
+.chart-threshold-label {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.threshold-red {
+  fill: #dc2626;
+}
+
+.threshold-orange {
+  fill: #ea580c;
+}
+
+.threshold-yellow {
+  fill: #f59e0b;
+}
+
+.threshold-green {
+  fill: #16a34a;
+}
+
 .chart-legend {
   display: flex;
   flex-wrap: wrap;
@@ -211,6 +232,16 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow-x: auto;
+}
+
+.detail-suggestion {
+  color: var(--muted);
+  font-size: 12px;
+  padding: 10px 14px;
+}
+
+.detail-suggestion strong {
+  color: #16a34a;
 }
 
 .measurement-table {
@@ -268,6 +299,49 @@
 
 .measurement-table .pr-purple {
   color: #7c3aed;
+  font-weight: 700;
+}
+
+.temporary-pr-result {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  margin-top: 14px;
+  padding: 14px;
+}
+
+.temporary-pr-grid {
+  display: grid;
+  gap: 8px 12px;
+  grid-template-columns: max-content 1fr;
+  margin-top: 10px;
+}
+
+.temporary-pr-result .pr-red {
+  color: #dc2626;
+}
+
+.temporary-pr-result .pr-orange {
+  color: #ea580c;
+}
+
+.temporary-pr-result .pr-yellow {
+  color: #f59e0b;
+}
+
+.temporary-pr-result .pr-green {
+  color: #16a34a;
+}
+
+.temporary-pr-result .pr-blue {
+  color: #2563eb;
+}
+
+.temporary-pr-result .pr-purple {
+  color: #7c3aed;
+}
+
+.temporary-pr-result strong[class^="pr-"] {
   font-weight: 700;
 }
 
