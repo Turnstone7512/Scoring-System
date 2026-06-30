@@ -338,20 +338,21 @@ function renderReferenceBands(rows, metric, student, x, y, minValue, maxValue, l
   if (boundaries.some((entry) => !entry)) return "";
   const bands = metric === "height"
     ? [
-        { className: "band-red", lower: (entry) => minValue, upper: (entry) => entry.pr3 },
-        { className: "band-orange", lower: (entry) => entry.pr3, upper: (entry) => entry.pr25 },
-        { className: "band-yellow", lower: (entry) => entry.pr25, upper: (entry) => entry.pr50 },
-        { className: "band-green", lower: (entry) => entry.pr50, upper: (entry) => entry.pr75 },
-        { className: "band-blue", lower: (entry) => entry.pr75, upper: (entry) => maxValue },
+        { className: "band-red", lower: (entry) => minValue, upper: (entry) => entry.pr1 },
+        { className: "band-orange", lower: (entry) => entry.pr1, upper: (entry) => entry.pr3 },
+        { className: "band-yellow", lower: (entry) => entry.pr3, upper: (entry) => entry.pr25 },
+        { className: "band-green", lower: (entry) => entry.pr25, upper: (entry) => entry.pr75 },
+        { className: "band-blue", lower: (entry) => entry.pr75, upper: (entry) => entry.pr97 },
+        { className: "band-purple", lower: (entry) => entry.pr97, upper: (entry) => maxValue },
       ]
     : [
         { className: "band-red", lower: (entry) => minValue, upper: (entry) => entry.pr1 },
         { className: "band-orange", lower: (entry) => entry.pr1, upper: (entry) => entry.pr3 },
         { className: "band-yellow", lower: (entry) => entry.pr3, upper: (entry) => entry.pr25 },
-        { className: "band-green", lower: (entry) => entry.pr25, upper: (entry) => entry.pr50 },
-        { className: "band-yellow", lower: (entry) => entry.pr50, upper: (entry) => entry.pr75 },
-        { className: "band-orange", lower: (entry) => entry.pr75, upper: (entry) => entry.pr97 },
-        { className: "band-red", lower: (entry) => entry.pr97, upper: (entry) => maxValue },
+        { className: "band-green", lower: (entry) => entry.pr25, upper: (entry) => entry.pr75 },
+        { className: "band-yellow", lower: (entry) => entry.pr75, upper: (entry) => entry.pr97 },
+        { className: "band-orange", lower: (entry) => entry.pr97, upper: (entry) => entry.pr99 },
+        { className: "band-red", lower: (entry) => entry.pr99, upper: (entry) => maxValue },
       ];
 
   return bands.map((band) => {
@@ -518,8 +519,8 @@ function getChartBandValues(student, metric, measurementDateValue) {
   const entry = getChartBandBoundaries(student, metric, measurementDateValue);
   if (!entry) return [];
   return metric === "height"
-    ? [entry.pr3, entry.pr25, entry.pr50, entry.pr75, entry.pr97]
-    : [entry.pr1, entry.pr3, entry.pr25, entry.pr50, entry.pr75, entry.pr97];
+    ? [entry.pr1, entry.pr3, entry.pr25, entry.pr75, entry.pr97]
+    : [entry.pr1, entry.pr3, entry.pr25, entry.pr75, entry.pr97, entry.pr99];
 }
 
 function getChartBandBoundaries(student, metric, measurementDateValue) {
@@ -535,6 +536,7 @@ function getChartBandBoundaries(student, metric, measurementDateValue) {
     pr50: values[2],
     pr75: values[3],
     pr97: values[4],
+    pr99: estimatePr99(values),
   };
 }
 
@@ -592,21 +594,26 @@ function estimatePr1(values) {
   return Math.max(0, estimated);
 }
 
+function estimatePr99(values) {
+  return values[4] + ((values[4] - values[3]) * 2) / 22;
+}
+
 function getPercentileClass(metric, value) {
   if (value === null || value === undefined || Number.isNaN(value)) return "";
   if (metric === "height") {
-    if (value <= 3) return "pr-red";
-    if (value <= 25) return "pr-orange";
-    if (value <= 50) return "pr-yellow";
+    if (value <= 1) return "pr-red";
+    if (value <= 3) return "pr-orange";
+    if (value <= 25) return "pr-yellow";
     if (value <= 75) return "pr-green";
-    return "pr-blue";
+    if (value <= 97) return "pr-blue";
+    return "pr-purple";
   }
   if (value <= 1) return "pr-red";
   if (value <= 3) return "pr-orange";
   if (value <= 25) return "pr-yellow";
-  if (value <= 50) return "pr-green";
-  if (value <= 75) return "pr-yellow";
-  if (value <= 97) return "pr-orange";
+  if (value <= 75) return "pr-green";
+  if (value <= 97) return "pr-yellow";
+  if (value <= 99) return "pr-orange";
   return "pr-red";
 }
 
@@ -713,6 +720,7 @@ function getChartSvgStyles() {
     .band-yellow{fill:#eab308}
     .band-green{fill:#22c55e}
     .band-blue{fill:#3b82f6}
+    .band-purple{fill:#8b5cf6}
   `;
 }
 

@@ -12,6 +12,7 @@ Static frontend for the scoring system. The frontend can be deployed to GitHub P
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| 20260630-0120 | 2026-06-30 | 調整身高體重 PR 色階區間，身高新增 PR1/PR97 紫色區間，體重新增 PR99 區間。 |
 | 20260630-0110 | 2026-06-30 | 身高體重折線圖新增合併下載圖檔，明細 PR 與數值依區間上色，折線圖背景新增 PR 半透明區帶。 |
 | 20260630-0100 | 2026-06-30 | 身高體重折線圖月份與年份分行顯示，並同步同頁學生與量測地點篩選。 |
 | 20260630-0090 | 2026-06-30 | 修正 GitHub push 批次檔的中文摘要與 commit message 解析，避免 CMD 產生空白 commit。 |

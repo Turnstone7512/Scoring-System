@@ -143,6 +143,10 @@
   fill: #3b82f6;
 }
 
+.band-purple {
+  fill: #8b5cf6;
+}
+
 .chart-label {
   fill: var(--muted);
   font-size: 12px;
@@ -234,6 +238,11 @@
 
 .measurement-table .pr-blue {
   color: #2563eb;
+  font-weight: 700;
+}
+
+.measurement-table .pr-purple {
+  color: #7c3aed;
   font-weight: 700;
 }
 
