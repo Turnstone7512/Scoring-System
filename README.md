@@ -12,6 +12,7 @@ Static frontend for the scoring system. The frontend can be deployed to GitHub P
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| 20260701-0040 | 2026-07-01 | 修正 GitHub 上傳批次檔中文 commit 訊息解析問題，改以 Base64 摘要產生 commit message。 |
 | 20260701-0030 | 2026-07-01 | 臨時計算 PR 表單改為身高體重同列，並依 19 歲門檻切換學生 PR 或管理員 BMI 建議體重。 |
 | 20260701-0020 | 2026-07-01 | 身高體重建議體重拆分算法：學生改用年齡體重 PR75，管理員維持 BMI 24。 |
 | 20260701-0010 | 2026-07-01 | 身高體重明細上方文字由建議體重上限改為建議體重。 |

@@ -3,9 +3,9 @@ setlocal EnableExtensions DisableDelayedExpansion
 chcp 65001 >nul
 
 set "REPO_DIR=E:\Programs\GitHub\Scoring-System"
-set "VERSION=20260701-0030"
-set "CHANGE_SUMMARY=臨時計算PR建議體重調整"
-set "COMMIT_MESSAGE=%VERSION% - %CHANGE_SUMMARY%"
+set "VERSION=20260701-0040"
+set "CHANGE_SUMMARY_B64=5L+u5q2jR2l0SHVi5LiK5YKz5om55qyh5qqU5Lit5paHQ29tbWl06KiK5oGv"
+set "COMMIT_MSG_FILE=%TEMP%\scoring-system-commit-message.txt"
 
 cd /d "%REPO_DIR%"
 if errorlevel 1 (
@@ -25,8 +25,14 @@ if %errorlevel%==0 (
   exit /b 0
 )
 
-echo Commit message: %COMMIT_MESSAGE%
-git -C "%REPO_DIR%" commit -m "%COMMIT_MESSAGE%"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$summary=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:CHANGE_SUMMARY_B64)); $message=$env:VERSION + ' - ' + $summary; [IO.File]::WriteAllText($env:COMMIT_MSG_FILE, $message, (New-Object Text.UTF8Encoding $false)); Write-Host ('Commit message: ' + $message)"
+if errorlevel 1 (
+  echo Failed to prepare commit message.
+  pause
+  exit /b 1
+)
+
+git -C "%REPO_DIR%" commit -F "%COMMIT_MSG_FILE%"
 
 git -C "%REPO_DIR%" push origin main
 
