@@ -976,7 +976,7 @@ function getChartSvgStyles() {
     .band-purple{fill:#8b5cf6}
     .pr-red{fill:#dc2626}
     .pr-orange{fill:#ea580c}
-    .pr-yellow{fill:#a16207}
+    .pr-yellow{fill:#f59e0b}
     .pr-green{fill:#16a34a}
     .pr-blue{fill:#2563eb}
     .pr-purple{fill:#7c3aed}

@@ -129,7 +129,7 @@
 }
 
 .chart-point.pr-yellow {
-  fill: #a16207;
+  fill: #f59e0b;
 }
 
 .chart-point.pr-green {
@@ -252,7 +252,7 @@
 }
 
 .measurement-table .pr-yellow {
-  color: #a16207;
+  color: #f59e0b;
   font-weight: 700;
 }
 

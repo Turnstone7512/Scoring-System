@@ -28,3 +28,14 @@ set
 from public.students s
 where sm.student_id = s.id
   and (sm.person_key is null or sm.person_name is null or sm.gender is null);
+
+drop policy if exists "student_measurements admin insert" on public.student_measurements;
+drop policy if exists "student_measurements public insert" on public.student_measurements;
+
+create policy "student_measurements public insert"
+  on public.student_measurements for insert
+  to anon, authenticated
+  with check (true);
+
+grant insert on public.student_measurements to anon, authenticated;
+grant update, delete on public.student_measurements to authenticated;

@@ -284,6 +284,7 @@ create policy "score_transactions admin delete"
 
 drop policy if exists "student_measurements public read active" on public.student_measurements;
 drop policy if exists "student_measurements admin insert" on public.student_measurements;
+drop policy if exists "student_measurements public insert" on public.student_measurements;
 drop policy if exists "student_measurements admin update" on public.student_measurements;
 drop policy if exists "student_measurements admin delete" on public.student_measurements;
 
@@ -292,10 +293,10 @@ create policy "student_measurements public read active"
   to anon, authenticated
   using (is_deleted = false);
 
-create policy "student_measurements admin insert"
+create policy "student_measurements public insert"
   on public.student_measurements for insert
-  to authenticated
-  with check (public.is_admin());
+  to anon, authenticated
+  with check (true);
 
 create policy "student_measurements admin update"
   on public.student_measurements for update
@@ -333,7 +334,8 @@ grant select on public.score_transactions to anon, authenticated;
 grant insert, update, delete on public.score_transactions to authenticated;
 
 grant select on public.student_measurements to anon, authenticated;
-grant insert, update, delete on public.student_measurements to authenticated;
+grant insert on public.student_measurements to anon, authenticated;
+grant update, delete on public.student_measurements to authenticated;
 
 grant select on public.audit_logs to anon, authenticated;
 grant insert on public.audit_logs to authenticated;
