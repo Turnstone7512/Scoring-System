@@ -522,13 +522,15 @@ function renderTableHeader(isAdminPerson) {
 }
 
 function renderSuggestedWeightUpper(rows) {
-  const latestHeight = getLatestHeight(rows);
-  const suggestedWeightUpper = calculateSuggestedWeightUpper(latestHeight);
-  if (suggestedWeightUpper === null) {
+  const person = getPerson(detailStudentId.value);
+  const suggestion = person?.isAdminPerson
+    ? getAdminSuggestedWeight(rows)
+    : getStudentSuggestedWeight(person, rows);
+  if (!suggestion) {
     detailSuggestion.textContent = "";
     return;
   }
-  detailSuggestion.innerHTML = `建議體重：<strong>${formatNumber(suggestedWeightUpper)} kg</strong>（依目前最新身高 ${formatNumber(latestHeight)} cm 計算）`;
+  detailSuggestion.innerHTML = `建議體重：<strong>${formatNumber(suggestion.weight)} kg</strong>（${escapeHtml(suggestion.description)}）`;
 }
 
 function openEditMode(id) {
@@ -940,23 +942,50 @@ function clearTemporaryPrCache() {
 }
 
 function renderTemporaryPrResult(data) {
-  const age = Math.min(18, Math.max(0, new Date().getFullYear() - Number(data.birthYear)));
+  const age = Math.max(0, new Date().getFullYear() - Number(data.birthYear));
   const person = { gender: data.gender, birthYear: data.birthYear };
-  const measurementDateValue = `${new Date().getFullYear()}-01-01`;
-  const heightPercentile = data.height === "" ? null : estimatePercentile(person, "height", data.height, measurementDateValue);
-  const weightPercentile = data.weight === "" ? null : estimatePercentile(person, "weight", data.weight, measurementDateValue);
+  const measurementDateValue = todayInputValue();
+  const useAdminLogic = age >= 19;
+  const heightPercentile = useAdminLogic || data.height === "" ? null : estimatePercentile(person, "height", data.height, measurementDateValue);
+  const weightPercentile = useAdminLogic || data.weight === "" ? null : estimatePercentile(person, "weight", data.weight, measurementDateValue);
+  const bmi = useAdminLogic ? calculateBmi({ heightCm: data.height, weightKg: data.weight }) : null;
   const heightClass = getPercentileClass("height", heightPercentile);
-  const weightClass = getPercentileClass("weight", weightPercentile);
+  const weightClass = useAdminLogic ? getBmiClass(bmi) : getPercentileClass("weight", weightPercentile);
+  const suggestedWeight = useAdminLogic
+    ? calculateSuggestedWeightUpper(data.height)
+    : getTemporaryStudentSuggestedWeight(person, measurementDateValue);
+  const suggestedDescription = useAdminLogic ? "依 BMI 24 計算" : "依年齡體重 PR75 計算";
   temporaryPrResult.className = "temporary-pr-result";
   temporaryPrResult.innerHTML = `
     <div><strong>${escapeHtml(data.name)}</strong>，估算年齡 ${age} 歲</div>
     <div class="temporary-pr-grid">
       <span>身高</span>
-      <strong class="${heightClass}">${data.height === "" ? "-" : `${formatNumber(data.height)} cm / ${formatPercentile(heightPercentile)}`}</strong>
+      <strong class="${heightClass}">${formatTemporaryHeightResult(data.height, heightPercentile, useAdminLogic)}</strong>
       <span>體重</span>
-      <strong class="${weightClass}">${data.weight === "" ? "-" : `${formatNumber(data.weight)} kg / ${formatPercentile(weightPercentile)}`}</strong>
+      <strong class="${weightClass}">${formatTemporaryWeightResult(data.weight, weightPercentile, bmi, useAdminLogic)}</strong>
+      <span>建議體重</span>
+      <strong class="pr-green">${suggestedWeight === null ? "-" : `${formatNumber(suggestedWeight)} kg`}</strong>
+      <span>計算方式</span>
+      <strong>${suggestedDescription}</strong>
     </div>
   `;
+}
+
+function getTemporaryStudentSuggestedWeight(person, measurementDateValue) {
+  const boundaries = getChartBandBoundaries(person, "weight", measurementDateValue);
+  return boundaries?.pr75 ?? null;
+}
+
+function formatTemporaryHeightResult(height, percentile, useAdminLogic) {
+  if (height === "") return "-";
+  const value = `${formatNumber(height)} cm`;
+  return useAdminLogic ? value : `${value} / ${formatPercentile(percentile)}`;
+}
+
+function formatTemporaryWeightResult(weight, percentile, bmi, useAdminLogic) {
+  if (weight === "") return "-";
+  const value = `${formatNumber(weight)} kg`;
+  return useAdminLogic ? `${value} / ${formatBmi(bmi)}` : `${value} / ${formatPercentile(percentile)}`;
 }
 
 function showTemporaryPrError(message) {
@@ -985,6 +1014,35 @@ function getLatestHeight(rows) {
     .filter((row) => Number.isFinite(Number(row.heightCm)) && Number(row.heightCm) > 0)
     .sort((a, b) => new Date(b.measurementDate) - new Date(a.measurementDate))[0];
   return latestRow ? Number(latestRow.heightCm) : null;
+}
+
+function getLatestMeasurementDate(rows) {
+  return [...rows]
+    .filter((row) => row.measurementDate)
+    .sort((a, b) => new Date(b.measurementDate) - new Date(a.measurementDate))[0]?.measurementDate || todayInputValue();
+}
+
+function getStudentSuggestedWeight(person, rows) {
+  if (!person || person.isAdminPerson) return null;
+  const measurementDateValue = getLatestMeasurementDate(rows);
+  const boundaries = getChartBandBoundaries(person, "weight", measurementDateValue);
+  if (!boundaries || !Number.isFinite(boundaries.pr75)) return null;
+  const age = estimateAge(person, measurementDateValue);
+  const ageText = Number.isFinite(age) ? `${age} 歲` : "目前年齡";
+  return {
+    weight: boundaries.pr75,
+    description: `依 ${ageText} 體重 PR75 計算`,
+  };
+}
+
+function getAdminSuggestedWeight(rows) {
+  const latestHeight = getLatestHeight(rows);
+  const suggestedWeightUpper = calculateSuggestedWeightUpper(latestHeight);
+  if (suggestedWeightUpper === null) return null;
+  return {
+    weight: suggestedWeightUpper,
+    description: `依目前最新身高 ${formatNumber(latestHeight)} cm 與 BMI 24 計算`,
+  };
 }
 
 function calculateSuggestedWeightUpper(heightCmValue) {

@@ -60,6 +60,18 @@
   grid-column: 1 / -1;
 }
 
+.temporary-pr-form {
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+}
+
+.temporary-pr-height-field {
+  grid-column: 1;
+}
+
+.temporary-pr-weight-field {
+  grid-column: 2;
+}
+
 .measurement-chart {
   display: grid;
   gap: 18px;
@@ -363,5 +375,10 @@
 
   .measurement-form {
     grid-template-columns: 1fr;
+  }
+
+  .temporary-pr-height-field,
+  .temporary-pr-weight-field {
+    grid-column: 1;
   }
 }
