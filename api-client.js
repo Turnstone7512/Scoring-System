@@ -159,16 +159,23 @@
   async function listStudentMeasurements(params) {
     let path = "/student_measurements?select=*,student:students(*)&is_deleted=eq.false&order=measurement_date.desc,created_at.desc";
     if (params.get("studentId")) path += `&student_id=eq.${encodeURIComponent(params.get("studentId"))}`;
+    if (params.get("personType")) path += `&person_type=eq.${encodeURIComponent(params.get("personType"))}`;
+    if (params.get("personKey")) path += `&person_key=eq.${encodeURIComponent(params.get("personKey"))}`;
     const rows = await api(path);
     return rows.map(mapStudentMeasurement);
   }
 
   async function createStudentMeasurement(data) {
     const row = {
-      student_id: data.studentId,
+      student_id: emptyToNull(data.studentId),
+      person_type: data.personType || "STUDENT",
+      person_key: emptyToNull(data.personKey || data.studentId),
+      person_name: emptyToNull(data.personName),
+      gender: emptyToNull(data.gender),
       measurement_date: data.measurementDate,
       height_cm: emptyNumberToNull(data.heightCm),
       weight_kg: emptyNumberToNull(data.weightKg),
+      waist_cm: emptyNumberToNull(data.waistCm),
       location: emptyToNull(data.location),
       note: emptyToNull(data.note),
     };
@@ -184,10 +191,15 @@
   async function updateStudentMeasurement(id, data) {
     const existing = await getRow("student_measurements", id);
     const row = {
-      student_id: data.studentId,
+      student_id: emptyToNull(data.studentId),
+      person_type: data.personType || "STUDENT",
+      person_key: emptyToNull(data.personKey || data.studentId),
+      person_name: emptyToNull(data.personName),
+      gender: emptyToNull(data.gender),
       measurement_date: data.measurementDate,
       height_cm: emptyNumberToNull(data.heightCm),
       weight_kg: emptyNumberToNull(data.weightKg),
+      waist_cm: emptyNumberToNull(data.waistCm),
       location: emptyToNull(data.location),
       note: emptyToNull(data.note),
       updated_at: new Date().toISOString(),
@@ -524,9 +536,14 @@
     return {
       id: row.id,
       studentId: row.student_id,
+      personType: row.person_type || "STUDENT",
+      personKey: row.person_key || row.student_id,
+      personName: row.person_name,
+      gender: row.gender,
       measurementDate: row.measurement_date,
       heightCm: row.height_cm === null || row.height_cm === undefined ? null : Number(row.height_cm),
       weightKg: row.weight_kg === null || row.weight_kg === undefined ? null : Number(row.weight_kg),
+      waistCm: row.waist_cm === null || row.waist_cm === undefined ? null : Number(row.waist_cm),
       location: row.location,
       note: row.note,
       isDeleted: row.is_deleted,

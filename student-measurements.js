@@ -11,6 +11,7 @@ const locationSelect = document.querySelector("#locationSelect");
 const locationInput = document.querySelector("#locationInput");
 const heightCm = document.querySelector("#heightCm");
 const weightKg = document.querySelector("#weightKg");
+const waistCm = document.querySelector("#waistCm");
 const note = document.querySelector("#note");
 const cancelMeasurementEdit = document.querySelector("#cancelMeasurementEdit");
 const formError = document.querySelector("#measurementFormError");
@@ -21,8 +22,14 @@ const emptyMeasurements = document.querySelector("#emptyMeasurements");
 const measurementCount = document.querySelector("#measurementCount");
 
 let students = [];
+let people = [];
 let detailRows = [];
 let allMeasurements = [];
+
+const adminPeople = [
+  { id: "ADMIN:Gink", personType: "ADMIN", personKey: "Gink", name: "Gink", gender: "MALE", isAdminPerson: true },
+  { id: "ADMIN:Lelia", personType: "ADMIN", personKey: "Lelia", name: "Lelia", gender: "FEMALE", isAdminPerson: true },
+];
 
 const growthReference = {
   FEMALE: {
@@ -146,13 +153,23 @@ async function init() {
 }
 
 function renderStudentOptions() {
-  const options = students
-    .map((student) => `<option value="${student.id}">${escapeHtml(student.name)}${student.grade ? `（${student.grade}年級）` : ""}</option>`)
+  people = [
+    ...students.map((student) => ({
+      ...student,
+      id: `STUDENT:${student.id}`,
+      personType: "STUDENT",
+      personKey: student.id,
+      isAdminPerson: false,
+    })),
+    ...adminPeople,
+  ];
+  const options = people
+    .map((person) => `<option value="${person.id}">${escapeHtml(person.name)}${person.grade ? `（${person.grade}年級）` : ""}</option>`)
     .join("");
-  const firstStudentId = students[0]?.id || "";
-  chartStudentId.innerHTML = options || `<option value="">尚無學生</option>`;
-  detailStudentId.innerHTML = options || `<option value="">尚無學生</option>`;
-  formStudentId.innerHTML = options || `<option value="">尚無學生</option>`;
+  const firstStudentId = people[0]?.id || "";
+  chartStudentId.innerHTML = options || `<option value=""></option>`;
+  detailStudentId.innerHTML = options || `<option value=""></option>`;
+  formStudentId.innerHTML = options || `<option value=""></option>`;
   chartStudentId.value = firstStudentId;
   detailStudentId.value = firstStudentId;
   formStudentId.value = firstStudentId;
@@ -212,13 +229,13 @@ function loadPageData() {
 }
 
 async function loadChart() {
-  const studentId = chartStudentId.value;
-  if (!studentId) {
-    chart.innerHTML = `<div class="empty-state chart-empty">請先建立學生資料</div>`;
+  const person = getPerson(chartStudentId.value);
+  if (!person) {
+    chart.innerHTML = `<div class="empty-state chart-empty">請先建立 Name 資料</div>`;
     return;
   }
   try {
-    const rows = await requestJson(`/api/student-measurements?studentId=${encodeURIComponent(studentId)}`);
+    const rows = await requestJson(buildMeasurementUrl(person));
     const filteredRows = filterByLocation(rows, chartLocationFilter.value);
     renderChart([...filteredRows].sort((a, b) => new Date(a.measurementDate) - new Date(b.measurementDate)));
   } catch (error) {
@@ -227,14 +244,14 @@ async function loadChart() {
 }
 
 async function loadDetails() {
-  const studentId = detailStudentId.value;
-  if (!studentId) {
+  const person = getPerson(detailStudentId.value);
+  if (!person) {
     detailRows = [];
     renderDetails();
     return;
   }
   try {
-    const rows = await requestJson(`/api/student-measurements?studentId=${encodeURIComponent(studentId)}`);
+    const rows = await requestJson(buildMeasurementUrl(person));
     detailRows = filterByLocation(rows, detailLocationFilter.value);
     renderDetails();
   } catch (error) {
@@ -251,15 +268,18 @@ function filterByLocation(rows, location) {
 }
 
 function renderChart(rows) {
-  const validRows = rows.filter((row) => row.heightCm !== null || row.weightKg !== null);
+  const selectedPerson = getPerson(chartStudentId.value);
+  const isAdminPerson = selectedPerson?.isAdminPerson;
+  const validRows = rows.filter((row) => row.heightCm !== null || row.weightKg !== null || (isAdminPerson && row.waistCm !== null));
   if (!validRows.length) {
-    chart.innerHTML = `<div class="empty-state chart-empty">這位學生目前沒有可繪製的身高體重紀錄</div>`;
+    chart.innerHTML = `<div class="empty-state chart-empty">這個 Name 目前沒有可繪製的身高體重紀錄</div>`;
     return;
   }
 
   chart.innerHTML = `
     ${renderSingleChart(validRows, "heightCm", "height", "身高", "cm")}
     ${renderSingleChart(validRows, "weightKg", "weight", "體重", "kg")}
+    ${isAdminPerson ? renderSingleChart(validRows, "waistCm", "waist", "腰圍", "cm") : ""}
   `;
 }
 
@@ -279,7 +299,7 @@ function renderSingleChart(rows, key, metric, label, unit) {
   const padding = { top: 24, right: 32, bottom: 46, left: 54 };
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
-  const student = getStudent(chartStudentId.value);
+  const student = getPerson(chartStudentId.value);
   const lineColor = getGenderLineColor(student);
   const referenceValues = chartRows.flatMap((row) => getChartBandValues(student, metric, row.measurementDate));
   const values = [...chartRows.map((row) => row[key]), ...referenceValues];
@@ -327,8 +347,12 @@ function renderSeries(rows, key, metric, student, lineColor, label, unit, x, y) 
   const pointText = points.map((point) => `${x(point.index)},${y(point.value)}`).join(" ");
   const dots = points.map((point) => {
     const percentile = estimatePercentile(student, metric, point.value, point.row.measurementDate);
-    const pointClass = getPercentileClass(metric, percentile);
-    const tooltip = `${label} ${formatNumber(point.value)}${unit}（${formatPercentile(percentile)}）\n${formatDate(point.row.measurementDate)}`;
+    const bmi = calculateBmi(point.row);
+    const pointClass = getMeasurementColorClass(student, metric, percentile, bmi, point.value);
+    const marker = student?.isAdminPerson && (metric === "height" || metric === "weight")
+      ? `BMI ${formatNumber(bmi)}`
+      : formatPercentile(percentile);
+    const tooltip = `${label} ${formatNumber(point.value)}${unit}（${marker}）\n${formatDate(point.row.measurementDate)}`;
     return `
     <circle class="chart-point ${pointClass}" cx="${x(point.index)}" cy="${y(point.value)}" r="4">
       <title>${escapeHtml(tooltip)}</title>
@@ -339,6 +363,7 @@ function renderSeries(rows, key, metric, student, lineColor, label, unit, x, y) 
 }
 
 function renderReferenceBands(rows, metric, student, x, y, minValue, maxValue, left, right) {
+  if (student?.isAdminPerson) return renderAdminBands(metric, student, minValue, maxValue, left, right, y);
   if (!student?.gender) return "";
   const boundaries = rows.map((row) => getChartBandBoundaries(student, metric, row.measurementDate));
   if (boundaries.some((entry) => !entry)) return "";
@@ -391,19 +416,24 @@ function renderDetails() {
   measurementCount.textContent = `共 ${sortedRows.length} 筆紀錄`;
   emptyMeasurements.classList.toggle("hidden", sortedRows.length > 0);
   tableBody.innerHTML = sortedRows.map((row) => {
-    const student = row.student || getStudent(row.studentId);
+    const student = getMeasurementPerson(row);
     const heightPercentile = estimatePercentile(student, "height", row.heightCm, row.measurementDate);
     const weightPercentile = estimatePercentile(student, "weight", row.weightKg, row.measurementDate);
-    const heightClass = getPercentileClass("height", heightPercentile);
-    const weightClass = getPercentileClass("weight", weightPercentile);
+    const bmi = calculateBmi(row);
+    const heightClass = getMeasurementColorClass(student, "height", heightPercentile, bmi, row.heightCm);
+    const weightClass = getMeasurementColorClass(student, "weight", weightPercentile, bmi, row.weightKg);
+    const waistClass = getMeasurementColorClass(student, "waist", null, bmi, row.waistCm);
+    const heightMarker = student?.isAdminPerson ? formatBmi(bmi) : formatPercentile(heightPercentile);
+    const weightMarker = student?.isAdminPerson ? formatBmi(bmi) : formatPercentile(weightPercentile);
     return `
       <tr>
         <td>${formatDate(row.measurementDate)}</td>
         <td>${escapeHtml(student?.name || "-")}</td>
         <td class="metric-value ${heightClass}">${formatNumber(row.heightCm)}</td>
-        <td class="pr-cell ${heightClass}">${formatPercentile(heightPercentile)}</td>
+        <td class="pr-cell ${heightClass}">${heightMarker}</td>
         <td class="metric-value ${weightClass}">${formatNumber(row.weightKg)}</td>
-        <td class="pr-cell ${weightClass}">${formatPercentile(weightPercentile)}</td>
+        <td class="pr-cell ${weightClass}">${weightMarker}</td>
+        <td class="metric-value ${waistClass}">${formatNumber(row.waistCm)}</td>
         <td>${escapeHtml(row.location || "-")}</td>
         <td>${escapeHtml(row.note || "-")}</td>
         <td class="admin-only"><button class="secondary-button" type="button" data-edit="${row.id}">編輯</button></td>
@@ -420,9 +450,10 @@ function openEditMode(id) {
   if (!row) return;
   measurementId.value = row.id;
   measurementDate.value = row.measurementDate;
-  formStudentId.value = row.studentId;
+  formStudentId.value = getMeasurementPersonId(row);
   heightCm.value = row.heightCm ?? "";
   weightKg.value = row.weightKg ?? "";
+  waistCm.value = row.waistCm ?? "";
   note.value = row.note || "";
   renderLocationOptions(row.location || "");
   measurementFormTitle.textContent = "編輯身高體重";
@@ -434,10 +465,11 @@ async function saveMeasurement(event) {
   event.preventDefault();
   hideFormError();
   const payload = {
-    studentId: formStudentId.value,
+    ...buildPersonPayload(getPerson(formStudentId.value)),
     measurementDate: measurementDate.value,
     heightCm: heightCm.value,
     weightKg: weightKg.value,
+    waistCm: waistCm.value,
     location: locationInput.value.trim(),
     note: note.value.trim(),
   };
@@ -455,9 +487,10 @@ async function saveMeasurement(event) {
       body: JSON.stringify(payload),
     });
     AppUI.toast(id ? "身高體重已更新" : "身高體重已新增");
-    chartStudentId.value = payload.studentId;
-    detailStudentId.value = payload.studentId;
-    resetForm({ keepStudentId: payload.studentId });
+    const personId = getPersonIdFromPayload(payload);
+    chartStudentId.value = personId;
+    detailStudentId.value = personId;
+    resetForm({ keepStudentId: personId });
     await loadLocationOptions();
     await Promise.all([loadChart(), loadDetails()]);
   } catch (error) {
@@ -471,9 +504,10 @@ async function saveMeasurement(event) {
 function resetForm(options = {}) {
   measurementId.value = "";
   measurementDate.value = todayInputValue();
-  formStudentId.value = options.keepStudentId || detailStudentId.value || students[0]?.id || "";
+  formStudentId.value = options.keepStudentId || detailStudentId.value || people[0]?.id || "";
   heightCm.value = "";
   weightKg.value = "";
+  waistCm.value = "";
   note.value = "";
   renderLocationOptions("");
   measurementFormTitle.textContent = "新增身高體重";
@@ -482,11 +516,12 @@ function resetForm(options = {}) {
 }
 
 function validateMeasurement(data) {
-  if (!data.studentId) return { valid: false, message: "請選擇學生" };
+  if (!data.personKey) return { valid: false, message: "請選擇 Name" };
   if (!data.measurementDate) return { valid: false, message: "請選擇日期" };
   if (!parseDateParts(data.measurementDate)) return { valid: false, message: "量測日期年份請使用 4 碼西元年，例如 2026-06-30" };
   if (data.heightCm !== "" && Number(data.heightCm) < 0) return { valid: false, message: "身高不可小於 0" };
   if (data.weightKg !== "" && Number(data.weightKg) < 0) return { valid: false, message: "體重不可小於 0" };
+  if (data.waistCm !== "" && Number(data.waistCm) < 0) return { valid: false, message: "腰圍不可小於 0" };
   return { valid: true };
 }
 
@@ -521,6 +556,60 @@ function getStudent(studentId) {
   return students.find((student) => student.id === studentId) || null;
 }
 
+function getPerson(personId) {
+  return people.find((person) => person.id === personId) || null;
+}
+
+function buildMeasurementUrl(person) {
+  const params = new URLSearchParams({
+    personType: person.personType,
+    personKey: person.personKey,
+  });
+  return `/api/student-measurements?${params.toString()}`;
+}
+
+function buildPersonPayload(person) {
+  if (!person) return {};
+  return {
+    studentId: person.personType === "STUDENT" ? person.personKey : "",
+    personType: person.personType,
+    personKey: person.personKey,
+    personName: person.name,
+    gender: person.gender || "",
+  };
+}
+
+function getPersonIdFromPayload(payload) {
+  return `${payload.personType}:${payload.personKey}`;
+}
+
+function getMeasurementPerson(row) {
+  if (row.personType === "ADMIN") {
+    return adminPeople.find((person) => person.personKey === row.personKey) || {
+      id: `ADMIN:${row.personKey}`,
+      personType: "ADMIN",
+      personKey: row.personKey,
+      name: row.personName || row.personKey,
+      gender: row.gender,
+      isAdminPerson: true,
+    };
+  }
+  const student = row.student || getStudent(row.studentId);
+  if (!student) return null;
+  return {
+    ...student,
+    id: `STUDENT:${student.id}`,
+    personType: "STUDENT",
+    personKey: student.id,
+    isAdminPerson: false,
+  };
+}
+
+function getMeasurementPersonId(row) {
+  const person = getMeasurementPerson(row);
+  return person?.id || "";
+}
+
 function getGenderLineColor(student) {
   if (student?.gender === "FEMALE") return "#f9a8d4";
   if (student?.gender === "MALE") return "#93c5fd";
@@ -528,6 +617,10 @@ function getGenderLineColor(student) {
 }
 
 function getChartBandValues(student, metric, measurementDateValue) {
+  if (student?.isAdminPerson) {
+    if (metric === "waist") return getWaistThresholds(student);
+    return [];
+  }
   const entry = getChartBandBoundaries(student, metric, measurementDateValue);
   if (!entry) return [];
   return metric === "height"
@@ -536,6 +629,7 @@ function getChartBandValues(student, metric, measurementDateValue) {
 }
 
 function getChartBandBoundaries(student, metric, measurementDateValue) {
+  if (student?.isAdminPerson) return null;
   if (!student?.gender) return null;
   const age = estimateAge(student, measurementDateValue);
   const reference = growthReference[student.gender]?.[metric]?.find((row) => row[0] === age);
@@ -552,7 +646,28 @@ function getChartBandBoundaries(student, metric, measurementDateValue) {
   };
 }
 
+function renderAdminBands(metric, student, minValue, maxValue, left, right, y) {
+  if (metric !== "waist") return "";
+  const thresholds = getWaistThresholds(student);
+  if (!thresholds.length) return "";
+  const bands = [
+    { className: "band-green", lower: minValue, upper: thresholds[0] },
+    { className: "band-yellow", lower: thresholds[0], upper: thresholds[1] },
+    { className: "band-red", lower: thresholds[1], upper: maxValue },
+  ];
+  return bands.map((band) => {
+    const upperY = y(clampRange(band.upper, minValue, maxValue));
+    const lowerY = y(clampRange(band.lower, minValue, maxValue));
+    return `<rect class="chart-band ${band.className}" x="${left}" y="${upperY}" width="${right - left}" height="${Math.max(0, lowerY - upperY)}"></rect>`;
+  }).join("");
+}
+
+function getWaistThresholds(person) {
+  return person?.gender === "FEMALE" ? [80, 82] : [90, 92];
+}
+
 function estimatePercentile(student, metric, value, measurementDateValue) {
+  if (student?.isAdminPerson) return null;
   if (!student || !student.gender || value === null || value === undefined || value === "") return null;
   const age = estimateAge(student, measurementDateValue);
   const reference = growthReference[student.gender]?.[metric]?.find((row) => row[0] === age);
@@ -629,6 +744,46 @@ function getPercentileClass(metric, value) {
   return "pr-red";
 }
 
+function getMeasurementColorClass(person, metric, percentile, bmi, value) {
+  if (value === null || value === undefined || value === "") return "";
+  if (person?.isAdminPerson) {
+    if (metric === "waist") return getWaistClass(person, value);
+    return getBmiClass(bmi);
+  }
+  return getPercentileClass(metric, percentile);
+}
+
+function calculateBmi(row) {
+  const height = Number(row.heightCm);
+  const weight = Number(row.weightKg);
+  if (!Number.isFinite(height) || !Number.isFinite(weight) || height <= 0 || weight <= 0) return null;
+  const meters = height / 100;
+  return weight / (meters * meters);
+}
+
+function formatBmi(value) {
+  return value === null || value === undefined || Number.isNaN(value) ? "-" : `BMI ${formatNumber(value)}`;
+}
+
+function getBmiClass(value) {
+  if (value === null || value === undefined || Number.isNaN(value)) return "";
+  if (value < 17.5) return "pr-red";
+  if (value < 18.5) return "pr-yellow";
+  if (value < 24) return "pr-green";
+  if (value < 27) return "pr-yellow";
+  if (value < 30) return "pr-orange";
+  return "pr-red";
+}
+
+function getWaistClass(person, value) {
+  const waist = Number(value);
+  if (!Number.isFinite(waist)) return "";
+  const [warning, danger] = getWaistThresholds(person);
+  if (waist < warning) return "pr-green";
+  if (waist < danger) return "pr-yellow";
+  return "pr-red";
+}
+
 function formatPercentile(value) {
   if (value === null || value === undefined || Number.isNaN(value)) return "-";
   return `${Math.round(value)}%`;
@@ -647,7 +802,7 @@ async function downloadChartImage() {
     AppUI.toast("目前沒有可下載的折線圖", "error");
     return;
   }
-  const student = getStudent(chartStudentId.value);
+  const student = getPerson(chartStudentId.value);
   const locationLabel = chartLocationFilter.value || "全部";
   const title = "身高體重折線圖";
   const subtitle = `學生：${student?.name || "-"}　量測地點：${locationLabel}`;

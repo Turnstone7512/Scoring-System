@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>身高體重</title>
     <link rel="stylesheet" href="styles.css?v=20260629-0020" />
-    <link rel="stylesheet" href="student-measurements.css?v=20260630-0130" />
+    <link rel="stylesheet" href="student-measurements.css?v=20260630-0150" />
   </head>
   <body class="theme-measurements">
     <header class="app-header">
@@ -31,7 +31,7 @@
             <p class="meta">選擇學生後直接顯示該學生的身高與體重趨勢。</p>
           </div>
           <div class="filter-controls">
-            <label class="inline-select">學生<select id="chartStudentId"></select></label>
+            <label class="inline-select">Name<select id="chartStudentId"></select></label>
             <label class="inline-select">量測地點<select id="chartLocationFilter"></select></label>
           </div>
         </div>
@@ -45,17 +45,18 @@
         <div class="section-title">
           <div>
             <h2 id="measurementFormTitle">新增身高體重</h2>
-            <p class="meta">身高、體重與量測地點可留空，日期與學生必填。</p>
+            <p class="meta">身高、體重、腰圍與量測地點可留空，日期與 Name 必填。</p>
           </div>
         </div>
         <form id="measurementForm" class="measurement-form">
           <input id="measurementId" type="hidden" />
           <label>日期<input id="measurementDate" type="date" min="1900-01-01" max="2100-12-31" required /></label>
-          <label>學生<select id="formStudentId" required></select></label>
+          <label>Name<select id="formStudentId" required></select></label>
           <label>量測地點<select id="locationSelect"></select></label>
           <label>自行輸入地點<input id="locationInput" type="text" maxlength="80" placeholder="例如：保健室" /></label>
           <label>身高（cm）<input id="heightCm" type="number" min="0" max="300" step="0.1" /></label>
           <label>體重（kg）<input id="weightKg" type="number" min="0" max="300" step="0.1" /></label>
+          <label>腰圍（cm）<input id="waistCm" type="number" min="0" max="300" step="0.1" /></label>
           <label class="wide-field">備註<input id="note" type="text" maxlength="200" /></label>
           <p id="measurementFormError" class="error-text hidden"></p>
           <div class="form-actions">
@@ -72,7 +73,7 @@
             <p id="measurementCount" class="meta">載入中...</p>
           </div>
           <div class="filter-controls">
-            <label class="inline-select">學生<select id="detailStudentId"></select></label>
+            <label class="inline-select">Name<select id="detailStudentId"></select></label>
             <label class="inline-select">量測地點<select id="detailLocationFilter"></select></label>
           </div>
         </div>
@@ -81,11 +82,12 @@
             <thead>
               <tr>
                 <th>日期</th>
-                <th>學生</th>
+                <th>Name</th>
                 <th>身高（cm）</th>
-                <th>身高 PR</th>
+                <th>身高 PR/BMI</th>
                 <th>體重（kg）</th>
-                <th>體重 PR</th>
+                <th>體重 PR/BMI</th>
+                <th>腰圍（cm）</th>
                 <th>量測地點</th>
                 <th>備註</th>
                 <th class="admin-only">操作</th>
@@ -102,6 +104,6 @@
     <script src="api-client.js?v=20260630-0050"></script>
     <script src="auth.js"></script>
     <script src="ui-utils.js"></script>
-    <script src="student-measurements.js?v=20260630-0130"></script>
+    <script src="student-measurements.js?v=20260630-0150"></script>
   </body>
 </html>

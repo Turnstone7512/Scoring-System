@@ -3,8 +3,8 @@ setlocal EnableExtensions DisableDelayedExpansion
 chcp 65001 >nul
 
 set "REPO_DIR=E:\Programs\GitHub\Scoring-System"
-set "VERSION=20260630-0130"
-set "CHANGE_SUMMARY=調整身高體重折線圖性別與PR點位顏色"
+set "VERSION=20260630-0140"
+set "CHANGE_SUMMARY=身高體重納入管理員腰圍與BMI"
 set "COMMIT_MESSAGE=%VERSION% - %CHANGE_SUMMARY%"
 
 cd /d "%REPO_DIR%"
