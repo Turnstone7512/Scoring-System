@@ -361,6 +361,12 @@
   border-bottom: 0;
 }
 
+.page-version {
+  color: #cbd5e1;
+  font-size: 12px;
+  text-align: right;
+}
+
 @media (max-width: 760px) {
   .section-title {
     align-items: stretch;
