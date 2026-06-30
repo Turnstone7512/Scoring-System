@@ -120,6 +120,8 @@
     const row = {
       name: text(data.name),
       grade: Number(data.grade),
+      gender: emptyToNull(data.gender),
+      birth_year: emptyNumberToNull(data.birthYear),
       class_no: emptyToNull(data.classNo),
       email: emptyToNull(data.email),
       photo_url: emptyToNull(data.photoUrl),
@@ -138,6 +140,8 @@
     const row = {
       name: text(data.name),
       grade: Number(data.grade),
+      gender: emptyToNull(data.gender),
+      birth_year: emptyNumberToNull(data.birthYear),
       class_no: emptyToNull(data.classNo),
       email: emptyToNull(data.email),
       photo_url: emptyToNull(data.photoUrl),
@@ -462,6 +466,8 @@
       id: row.id,
       name: row.name,
       grade: row.grade,
+      gender: row.gender,
+      birthYear: row.birth_year,
       classNo: row.class_no,
       email: row.email,
       photoUrl: row.photo_url,

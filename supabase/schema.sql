@@ -12,6 +12,8 @@ create table if not exists public.students (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   grade integer not null,
+  gender text check (gender in ('MALE', 'FEMALE')),
+  birth_year integer,
   class_no text,
   email text,
   photo_url text,
@@ -25,6 +27,19 @@ create table if not exists public.students (
 create unique index if not exists students_email_unique_active
   on public.students (lower(email))
   where email is not null and is_deleted = false;
+
+alter table public.students
+  add column if not exists gender text;
+
+alter table public.students
+  add column if not exists birth_year integer;
+
+alter table public.students
+  drop constraint if exists students_gender_check;
+
+alter table public.students
+  add constraint students_gender_check
+  check (gender in ('MALE', 'FEMALE') or gender is null);
 
 create table if not exists public.score_items (
   id uuid primary key default gen_random_uuid(),

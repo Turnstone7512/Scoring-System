@@ -21,6 +21,99 @@ let students = [];
 let detailRows = [];
 let allMeasurements = [];
 
+const growthReference = {
+  FEMALE: {
+    height: [
+      [0, 45.6, 47.9, 49.1, 50.4, 52.7],
+      [1, 69.2, 72.3, 74, 75.8, 78.9],
+      [2, 80.3, 84.2, 86.4, 88.6, 92.5],
+      [3, 87.9, 92.5, 95.1, 97.6, 102.2],
+      [4, 94.6, 99.8, 102.7, 105.6, 110.8],
+      [5, 100.5, 106.2, 109.4, 112.6, 118.4],
+      [6, 105.5, 111.3, 114.8, 118, 124.2],
+      [7, 110.6, 116.4, 120.3, 123.5, 130.1],
+      [8, 115.7, 122, 125.8, 129.2, 136.5],
+      [9, 120.7, 127.5, 131.3, 135.4, 143.5],
+      [10, 125.8, 133, 137.5, 142.3, 150.8],
+      [11, 131.8, 139.8, 144.5, 149.4, 157.3],
+      [12, 137.9, 146.3, 150.5, 154.9, 161.8],
+      [13, 143.2, 150.7, 154.5, 158.4, 164.8],
+      [14, 146.8, 153.2, 156.8, 160.4, 167],
+      [15, 148.5, 154.5, 157.9, 161.5, 168.2],
+      [16, 149.5, 155.3, 158.7, 162.3, 168.8],
+      [17, 150, 155.8, 159.3, 162.8, 169],
+      [18, 150, 156, 159.5, 163, 169],
+    ],
+    weight: [
+      [0, 2.4, 2.9, 3.2, 3.6, 4.2],
+      [1, 7.1, 8.2, 8.9, 9.7, 11.3],
+      [2, 9.2, 10.6, 11.5, 12.5, 14.6],
+      [3, 11, 12.7, 13.9, 15.1, 17.8],
+      [4, 12.5, 14.7, 16.1, 17.7, 21.1],
+      [5, 14, 16.5, 18.2, 20.2, 24.4],
+      [6, 15.9, 18.5, 20.5, 22.8, 28.6],
+      [7, 17.8, 20.6, 22.8, 25.3, 32.9],
+      [8, 19.6, 22.8, 25.4, 28.4, 37.8],
+      [9, 21.5, 25.3, 28.2, 32.1, 42.8],
+      [10, 23.8, 28.3, 31.8, 36.7, 47.3],
+      [11, 26.5, 32.5, 36.9, 42.2, 52.7],
+      [12, 29.8, 37.1, 41.7, 47, 57.8],
+      [13, 33.5, 40.9, 45.4, 50.5, 61.2],
+      [14, 37.1, 43.8, 48.1, 53, 63.9],
+      [15, 39.3, 45.7, 49.6, 54.5, 65.5],
+      [16, 40.5, 46.7, 50.5, 55, 66.2],
+      [17, 41.5, 47.2, 51, 55, 66.7],
+      [18, 42, 47.3, 51, 55, 67],
+    ],
+  },
+  MALE: {
+    height: [
+      [0, 46.3, 48.6, 49.9, 51.2, 53.4],
+      [1, 71.3, 74.1, 75.7, 77.4, 80.2],
+      [2, 82.1, 85.8, 87.8, 89.9, 93.6],
+      [3, 89.1, 93.6, 96.1, 98.6, 103.1],
+      [4, 95.4, 100.5, 103.5, 106.2, 111.2],
+      [5, 101.2, 106.8, 110, 113.1, 118.7],
+      [6, 106.5, 112.3, 115.6, 118.9, 124.9],
+      [7, 111.8, 117.8, 121.2, 124.6, 131.2],
+      [8, 117, 123.3, 126.8, 130.3, 137.2],
+      [9, 121.8, 128, 131.8, 135.5, 142.5],
+      [10, 126, 132.5, 136.5, 140.5, 148.3],
+      [11, 130.5, 137.8, 142, 146.7, 156.1],
+      [12, 135.6, 143.8, 148.8, 154.2, 164.4],
+      [13, 141.9, 151.5, 156.9, 162, 171],
+      [14, 149.3, 159, 163.7, 168.3, 176],
+      [15, 155.5, 163.5, 167.6, 171.8, 179],
+      [16, 159.3, 166.2, 170, 173.8, 180.5],
+      [17, 160.9, 167.7, 171.5, 174.8, 181.5],
+      [18, 161.5, 168, 172, 175, 182],
+    ],
+    weight: [
+      [0, 2.5, 3, 3.3, 3.7, 4.3],
+      [1, 7.8, 9, 9.6, 10.4, 11.8],
+      [2, 9.8, 11.3, 12.2, 13.1, 15.1],
+      [3, 11.4, 13.2, 14.3, 15.6, 18],
+      [4, 12.9, 15, 16.3, 17.8, 20.9],
+      [5, 14.3, 16.7, 18.3, 20.1, 23.8],
+      [6, 16.3, 19, 20.9, 23.2, 29.2],
+      [7, 18.4, 21.3, 23.6, 26.3, 34.7],
+      [8, 20.3, 23.8, 26.3, 29.6, 40.2],
+      [9, 22.1, 26, 28.8, 32.7, 44.3],
+      [10, 24, 28.4, 31.5, 36, 48.6],
+      [11, 26.3, 31.4, 35.3, 40.8, 54.8],
+      [12, 29.3, 35.2, 40.3, 46.5, 61.5],
+      [13, 32.8, 40.7, 46.5, 53, 68.5],
+      [14, 38, 46.8, 52.5, 58.7, 74.3],
+      [15, 43, 51.3, 56.5, 62.5, 77.6],
+      [16, 46.8, 54.1, 59, 65, 79.3],
+      [17, 49.3, 56.1, 61, 66.6, 80],
+      [18, 50.3, 57.5, 62.5, 67.6, 80],
+    ],
+  },
+};
+
+const percentileMarks = [3, 25, 50, 75, 97];
+
 chartStudentId.addEventListener("change", loadChart);
 detailStudentId.addEventListener("change", loadDetails);
 locationSelect.addEventListener("change", syncLocationInput);
@@ -122,16 +215,33 @@ function renderChart(rows) {
     return;
   }
 
-  const width = Math.max(680, validRows.length * 96);
+  chart.innerHTML = `
+    ${renderSingleChart(validRows, "heightCm", "#0ea5e9", "身高", "cm")}
+    ${renderSingleChart(validRows, "weightKg", "#f97316", "體重", "kg")}
+  `;
+}
+
+function renderSingleChart(rows, key, color, label, unit) {
+  const chartRows = rows.filter((row) => row[key] !== null && Number.isFinite(row[key]));
+  if (!chartRows.length) {
+    return `
+      <section class="split-chart">
+        <h3>${label}（${unit}）</h3>
+        <div class="empty-state chart-empty">目前沒有${label}紀錄</div>
+      </section>
+    `;
+  }
+
+  const width = Math.max(680, chartRows.length * 96);
   const height = 300;
   const padding = { top: 24, right: 32, bottom: 46, left: 54 };
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
-  const values = validRows.flatMap((row) => [row.heightCm, row.weightKg]).filter((value) => value !== null && Number.isFinite(value));
+  const values = chartRows.map((row) => row[key]);
   const minValue = Math.max(0, Math.floor(Math.min(...values) - 5));
   const maxValue = Math.ceil(Math.max(...values) + 5);
   const range = Math.max(1, maxValue - minValue);
-  const x = (index) => padding.left + (validRows.length === 1 ? plotWidth / 2 : (index / (validRows.length - 1)) * plotWidth);
+  const x = createTimeScale(chartRows, padding.left, plotWidth);
   const y = (value) => padding.top + ((maxValue - value) / range) * plotHeight;
   const ticks = makeTicks(minValue, maxValue);
 
@@ -139,27 +249,27 @@ function renderChart(rows) {
     <line class="chart-grid" x1="${padding.left}" x2="${width - padding.right}" y1="${y(tick)}" y2="${y(tick)}"></line>
     <text class="chart-label" x="${padding.left - 10}" y="${y(tick) + 4}" text-anchor="end">${tick}</text>
   `).join("");
-  const labels = validRows.map((row, index) => `
+  const labels = chartRows.map((row, index) => `
     <text class="chart-label" x="${x(index)}" y="${height - 18}" text-anchor="middle">${escapeHtml(formatShortDate(row.measurementDate))}</text>
   `).join("");
-  const heightSeries = renderSeries(validRows, "heightCm", "#0ea5e9", "身高", x, y);
-  const weightSeries = renderSeries(validRows, "weightKg", "#f97316", "體重", x, y);
+  const series = renderSeries(chartRows, key, color, label, x, y);
 
-  chart.innerHTML = `
+  return `
+    <section class="split-chart">
+      <div class="split-chart-title">
+        <h3>${label}（${unit}）</h3>
+        <span class="chart-legend-item"><i style="background:${color}"></i>${label}</span>
+      </div>
     <div class="chart-scroll">
-      <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="身高體重折線圖">
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${label}折線圖">
         ${grid}
         <line class="chart-axis" x1="${padding.left}" x2="${padding.left}" y1="${padding.top}" y2="${height - padding.bottom}"></line>
         <line class="chart-axis" x1="${padding.left}" x2="${width - padding.right}" y1="${height - padding.bottom}" y2="${height - padding.bottom}"></line>
         ${labels}
-        ${heightSeries}
-        ${weightSeries}
+          ${series}
       </svg>
     </div>
-    <div class="chart-legend">
-      <span class="chart-legend-item"><i style="background:#0ea5e9"></i>身高（cm）</span>
-      <span class="chart-legend-item"><i style="background:#f97316"></i>體重（kg）</span>
-    </div>
+    </section>
   `;
 }
 
@@ -178,21 +288,37 @@ function renderSeries(rows, key, color, label, x, y) {
   return `<polyline class="chart-line" points="${pointText}" style="stroke:${color}"></polyline>${dots}`;
 }
 
+function createTimeScale(rows, left, width) {
+  const times = rows.map((row) => toDateTime(row.measurementDate));
+  const minTime = Math.min(...times);
+  const maxTime = Math.max(...times);
+  const range = maxTime - minTime;
+  return (index) => {
+    if (!range) return left + width / 2;
+    return left + ((times[index] - minTime) / range) * width;
+  };
+}
+
 function renderDetails() {
   const sortedRows = [...detailRows].sort((a, b) => new Date(b.measurementDate) - new Date(a.measurementDate));
   measurementCount.textContent = `共 ${sortedRows.length} 筆紀錄`;
   emptyMeasurements.classList.toggle("hidden", sortedRows.length > 0);
-  tableBody.innerHTML = sortedRows.map((row) => `
-    <tr>
-      <td>${formatDate(row.measurementDate)}</td>
-      <td>${escapeHtml(row.student?.name || getStudentName(row.studentId))}</td>
-      <td>${formatNumber(row.heightCm)}</td>
-      <td>${formatNumber(row.weightKg)}</td>
-      <td>${escapeHtml(row.location || "-")}</td>
-      <td>${escapeHtml(row.note || "-")}</td>
-      <td class="admin-only"><button class="secondary-button" type="button" data-edit="${row.id}">編輯</button></td>
-    </tr>
-  `).join("");
+  tableBody.innerHTML = sortedRows.map((row) => {
+    const student = row.student || getStudent(row.studentId);
+    return `
+      <tr>
+        <td>${formatDate(row.measurementDate)}</td>
+        <td>${escapeHtml(student?.name || "-")}</td>
+        <td>${formatNumber(row.heightCm)}</td>
+        <td>${formatPercentile(estimatePercentile(student, "height", row.heightCm, row.measurementDate))}</td>
+        <td>${formatNumber(row.weightKg)}</td>
+        <td>${formatPercentile(estimatePercentile(student, "weight", row.weightKg, row.measurementDate))}</td>
+        <td>${escapeHtml(row.location || "-")}</td>
+        <td>${escapeHtml(row.note || "-")}</td>
+        <td class="admin-only"><button class="secondary-button" type="button" data-edit="${row.id}">編輯</button></td>
+      </tr>
+    `;
+  }).join("");
   tableBody.querySelectorAll("[data-edit]").forEach((button) => {
     button.addEventListener("click", () => openEditMode(button.dataset.edit));
   });
@@ -296,12 +422,69 @@ function todayInputValue() {
 }
 
 function getStudentName(studentId) {
-  return students.find((student) => student.id === studentId)?.name || "-";
+  return getStudent(studentId)?.name || "-";
+}
+
+function getStudent(studentId) {
+  return students.find((student) => student.id === studentId) || null;
+}
+
+function estimatePercentile(student, metric, value, measurementDateValue) {
+  if (!student || !student.gender || value === null || value === undefined || value === "") return null;
+  const age = estimateAge(student, measurementDateValue);
+  const reference = growthReference[student.gender]?.[metric]?.find((row) => row[0] === age);
+  if (!reference) return null;
+  return interpolatePercentile(Number(value), reference.slice(1));
+}
+
+function estimateAge(student, measurementDateValue) {
+  const birthYear = Number(student.birthYear);
+  if (Number.isInteger(birthYear) && birthYear > 1900) {
+    const measurementYear = new Date(`${measurementDateValue}T00:00:00`).getFullYear();
+    return Math.min(18, Math.max(0, measurementYear - birthYear));
+  }
+  return estimateAgeFromGrade(student.grade);
+}
+
+function estimateAgeFromGrade(grade) {
+  const gradeNumber = Number(grade);
+  if (!Number.isFinite(gradeNumber)) return null;
+  return Math.min(18, Math.max(0, Math.round(gradeNumber + 5)));
+}
+
+function interpolatePercentile(value, values) {
+  if (!Number.isFinite(value)) return null;
+  if (value <= values[0]) return clampPercent((value / values[0]) * percentileMarks[0]);
+  for (let index = 1; index < values.length; index += 1) {
+    if (value <= values[index]) {
+      const startValue = values[index - 1];
+      const endValue = values[index];
+      const startPercent = percentileMarks[index - 1];
+      const endPercent = percentileMarks[index];
+      const ratio = endValue === startValue ? 0 : (value - startValue) / (endValue - startValue);
+      return clampPercent(startPercent + ratio * (endPercent - startPercent));
+    }
+  }
+  const tailSpan = Math.max(1, values[4] - values[3]);
+  return clampPercent(percentileMarks[4] + ((value - values[4]) / tailSpan) * (100 - percentileMarks[4]));
+}
+
+function clampPercent(value) {
+  return Math.max(0, Math.min(100, value));
+}
+
+function formatPercentile(value) {
+  if (value === null || value === undefined || Number.isNaN(value)) return "-";
+  return `${Math.round(value)}%`;
 }
 
 function formatDate(value) {
   if (!value) return "-";
   return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(`${value}T00:00:00`));
+}
+
+function toDateTime(value) {
+  return new Date(`${value}T00:00:00`).getTime();
 }
 
 function formatShortDate(value) {

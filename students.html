@@ -23,7 +23,7 @@
       <section class="toolbar"><div><h2>學生清單</h2><p id="studentCount" class="meta">載入中...</p></div><button id="addStudentButton" type="button">新增學生</button></section>
       <section class="table-wrap" aria-live="polite">
         <table class="student-table">
-          <thead><tr><th>學生姓名</th><th>年級</th><th>座號</th><th>Email</th><th>目前點數</th><th>最後異動時間</th><th>操作</th></tr></thead>
+          <thead><tr><th>學生姓名</th><th>性別</th><th>出生年</th><th>年級</th><th>座號</th><th>Email</th><th>目前點數</th><th>最後異動時間</th><th>操作</th></tr></thead>
           <tbody id="studentsTableBody"></tbody>
         </table>
         <div id="emptyStudents" class="empty-state hidden">目前沒有學生資料</div>
@@ -34,6 +34,8 @@
         <div class="modal-title"><h2 id="studentFormTitle">新增學生</h2><button id="closeStudentDialog" class="secondary-button icon-button" type="button" aria-label="關閉">×</button></div>
         <input id="studentId" type="hidden" />
         <label>學生姓名<input id="name" name="name" type="text" required maxlength="80" /></label>
+        <label>性別<select id="gender" name="gender"><option value="">未註記</option><option value="FEMALE">女</option><option value="MALE">男</option></select></label>
+        <label>出生年<input id="birthYear" name="birthYear" type="number" min="1900" max="2100" step="1" placeholder="例如：2017" /></label>
         <label>年級<input id="grade" name="grade" type="number" min="1" max="9" step="1" required /></label>
         <label>座號<input id="classNo" name="classNo" type="text" maxlength="30" placeholder="例如 12" /></label>
         <label>Email<input id="email" name="email" type="email" maxlength="120" /></label>
@@ -44,9 +46,9 @@
     </dialog>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
-    <script src="api-client.js?v=20260617-0045"></script>
+    <script src="api-client.js?v=20260630-0050"></script>
     <script src="auth.js"></script>
     <script src="ui-utils.js"></script>
-    <script src="students.js?v=20260617-0150"></script>
+    <script src="students.js?v=20260630-0050"></script>
   </body>
 </html>

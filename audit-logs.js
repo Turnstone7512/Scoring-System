@@ -180,6 +180,7 @@ function getTableSpec(tableName) {
     return [
       { label: "建立時間", value: (value) => formatDate(readValue(value, "created_at", "createdAt")) },
       { label: "姓名", value: (value) => readValue(value, "name") },
+      { label: "性別", value: (value) => formatGender(readValue(value, "gender")) },
       { label: "座號", value: (value) => readValue(value, "class_no", "classNo") },
       { label: "目前點數", value: (value) => readValue(value, "current_score", "currentScore") },
       { label: "照片網址", value: (value) => readValue(value, "photo_url", "photoUrl") },
@@ -223,6 +224,12 @@ function formatStudentName(value) {
   const studentId = readValue(value, "student_id", "studentId");
   if (!studentId) return "-";
   return studentNameById.get(String(studentId)) || studentId;
+}
+
+function formatGender(value) {
+  if (value === "MALE") return "男";
+  if (value === "FEMALE") return "女";
+  return "-";
 }
 
 function formatItemName(value) {

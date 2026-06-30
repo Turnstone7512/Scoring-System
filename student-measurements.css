@@ -45,7 +45,27 @@
 }
 
 .measurement-chart {
+  display: grid;
+  gap: 18px;
   min-height: 280px;
+}
+
+.split-chart {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.split-chart-title {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.split-chart-title h3 {
+  margin: 0;
 }
 
 .chart-empty {
@@ -116,7 +136,7 @@
 
 .measurement-table {
   border-collapse: collapse;
-  min-width: 860px;
+  min-width: 1020px;
   width: 100%;
 }
 

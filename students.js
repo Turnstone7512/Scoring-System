@@ -10,6 +10,8 @@ const formError = document.querySelector("#formError");
 const fields = {
   id: document.querySelector("#studentId"),
   name: document.querySelector("#name"),
+  gender: document.querySelector("#gender"),
+  birthYear: document.querySelector("#birthYear"),
   grade: document.querySelector("#grade"),
   classNo: document.querySelector("#classNo"),
   email: document.querySelector("#email"),
@@ -71,7 +73,7 @@ function insertPhotoPreview() {
 
 function renderStudents() {
   const filtered = students.filter((student) => {
-    const haystack = `${student.name || ""} ${student.grade || ""} ${student.classNo || ""} ${student.email || ""}`.toLowerCase();
+    const haystack = `${student.name || ""} ${getGenderLabel(student.gender)} ${student.birthYear || ""} ${student.grade || ""} ${student.classNo || ""} ${student.email || ""}`.toLowerCase();
     return haystack.includes(searchTerm);
   });
   const sortedStudents = [...filtered].sort(compareStudents);
@@ -105,6 +107,8 @@ function renderStudentRow(student) {
   return `
     <tr>
       <td><div class="student-name-cell">${photo}<strong>${escapeHtml(student.name)}</strong></div></td>
+      <td>${getGenderLabel(student.gender)}</td>
+      <td>${student.birthYear || "-"}</td>
       <td>${student.grade}</td>
       <td>${escapeHtml(student.classNo || "-")}</td>
       <td>${escapeHtml(student.email || "-")}</td>
@@ -124,6 +128,8 @@ function setupStudentSortHeaders() {
   const headers = document.querySelectorAll(".student-table thead th");
   const columns = [
     ["name", "學生姓名"],
+    ["gender", "性別"],
+    ["birthYear", "出生年"],
     ["grade", "年級"],
     ["classNo", "座號"],
     ["email", "Email"],
@@ -157,8 +163,9 @@ function compareStudents(a, b) {
 }
 
 function getStudentSortValue(student, key) {
-  if (key === "grade" || key === "currentScore") return Number(student[key] || 0);
+  if (key === "grade" || key === "birthYear" || key === "currentScore") return Number(student[key] || 0);
   if (key === "updatedAt") return new Date(student.lastTransactionAt || student.updatedAt || 0).getTime();
+  if (key === "gender") return getGenderLabel(student.gender);
   return student[key] || "";
 }
 
@@ -186,6 +193,8 @@ function openEditDialog(id) {
   if (!student) return;
   fields.id.value = student.id;
   fields.name.value = student.name;
+  fields.gender.value = student.gender || "";
+  fields.birthYear.value = student.birthYear || "";
   fields.grade.value = student.grade;
   fields.classNo.value = student.classNo || "";
   fields.email.value = student.email || "";
@@ -203,6 +212,8 @@ async function saveStudent(event) {
   clearFieldErrors();
   const payload = {
     name: fields.name.value.trim(),
+    gender: fields.gender.value,
+    birthYear: fields.birthYear.value,
     grade: Number(fields.grade.value),
     classNo: fields.classNo.value.trim(),
     email: fields.email.value.trim(),
@@ -265,6 +276,9 @@ function validateStudent(data) {
   if (!Number.isInteger(data.grade) || data.grade < 1 || data.grade > 9) {
     return { valid: false, field: "grade", message: "年級必須是 1 到 9 的整數" };
   }
+  if (data.birthYear !== "" && (!Number.isInteger(Number(data.birthYear)) || Number(data.birthYear) < 1900 || Number(data.birthYear) > 2100)) {
+    return { valid: false, field: "birthYear", message: "出生年請輸入有效西元年" };
+  }
   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
     return { valid: false, field: "email", message: "Email 格式不正確" };
   }
@@ -301,6 +315,12 @@ async function requestJson(url, options = {}) {
 function formatDateOnly(value) {
   if (!value) return "-";
   return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(value));
+}
+
+function getGenderLabel(gender) {
+  if (gender === "MALE") return "男";
+  if (gender === "FEMALE") return "女";
+  return "-";
 }
 
 function escapeHtml(value) {
