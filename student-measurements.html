@@ -30,7 +30,10 @@
             <h2>身高體重折線圖</h2>
             <p class="meta">選擇學生後直接顯示該學生的身高與體重趨勢。</p>
           </div>
-          <label class="inline-select">學生<select id="chartStudentId"></select></label>
+          <div class="filter-controls">
+            <label class="inline-select">學生<select id="chartStudentId"></select></label>
+            <label class="inline-select">量測地點<select id="chartLocationFilter"></select></label>
+          </div>
         </div>
         <div id="measurementChart" class="measurement-chart" aria-live="polite"></div>
       </section>
@@ -44,7 +47,7 @@
         </div>
         <form id="measurementForm" class="measurement-form">
           <input id="measurementId" type="hidden" />
-          <label>日期<input id="measurementDate" type="date" required /></label>
+          <label>日期<input id="measurementDate" type="date" min="1900-01-01" max="2100-12-31" required /></label>
           <label>學生<select id="formStudentId" required></select></label>
           <label>量測地點<select id="locationSelect"></select></label>
           <label>自行輸入地點<input id="locationInput" type="text" maxlength="80" placeholder="例如：保健室" /></label>
@@ -65,7 +68,10 @@
             <h2>身高體重明細</h2>
             <p id="measurementCount" class="meta">載入中...</p>
           </div>
-          <label class="inline-select">學生<select id="detailStudentId"></select></label>
+          <div class="filter-controls">
+            <label class="inline-select">學生<select id="detailStudentId"></select></label>
+            <label class="inline-select">量測地點<select id="detailLocationFilter"></select></label>
+          </div>
         </div>
         <div class="table-wrap" aria-live="polite">
           <table class="measurement-table">
@@ -93,6 +99,6 @@
     <script src="api-client.js?v=20260630-0050"></script>
     <script src="auth.js"></script>
     <script src="ui-utils.js"></script>
-    <script src="student-measurements.js?v=20260630-0050"></script>
+    <script src="student-measurements.js?v=20260630-0090"></script>
   </body>
 </html>

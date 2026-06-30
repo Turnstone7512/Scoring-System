@@ -1,11 +1,18 @@
 @echo off
+setlocal EnableExtensions DisableDelayedExpansion
 chcp 65001 >nul
-set "REPO_DIR=E:\Programs\GitHub\Scoring-System"
-cd /d "%REPO_DIR%"
 
-set VERSION=20260630-0050
-set CHANGE_SUMMARY=新增學生出生年並優先用於 PR 年齡估算
-set COMMIT_MESSAGE=%VERSION% - %CHANGE_SUMMARY%
+set "REPO_DIR=E:\Programs\GitHub\Scoring-System"
+set "VERSION=20260630-0090"
+set "CHANGE_SUMMARY=修正GitHub push批次檔中文摘要解析"
+set "COMMIT_MESSAGE=%VERSION% - %CHANGE_SUMMARY%"
+
+cd /d "%REPO_DIR%"
+if errorlevel 1 (
+  echo Cannot open repo directory: %REPO_DIR%
+  pause
+  exit /b 1
+)
 
 git -C "%REPO_DIR%" status
 

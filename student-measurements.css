@@ -28,6 +28,14 @@
   min-width: min(280px, 100%);
 }
 
+.filter-controls {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
 .measurement-form {
   display: grid;
   gap: 12px 14px;
@@ -160,6 +168,10 @@
   .section-title {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .filter-controls {
+    justify-content: stretch;
   }
 
   .measurement-form {

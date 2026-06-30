@@ -1,5 +1,7 @@
 const chartStudentId = document.querySelector("#chartStudentId");
+const chartLocationFilter = document.querySelector("#chartLocationFilter");
 const detailStudentId = document.querySelector("#detailStudentId");
+const detailLocationFilter = document.querySelector("#detailLocationFilter");
 const formStudentId = document.querySelector("#formStudentId");
 const measurementForm = document.querySelector("#measurementForm");
 const measurementFormTitle = document.querySelector("#measurementFormTitle");
@@ -115,7 +117,9 @@ const growthReference = {
 const percentileMarks = [3, 25, 50, 75, 97];
 
 chartStudentId.addEventListener("change", loadChart);
+chartLocationFilter.addEventListener("change", loadChart);
 detailStudentId.addEventListener("change", loadDetails);
+detailLocationFilter.addEventListener("change", loadDetails);
 locationSelect.addEventListener("change", syncLocationInput);
 measurementForm.addEventListener("submit", saveMeasurement);
 cancelMeasurementEdit.addEventListener("click", resetForm);
@@ -162,6 +166,15 @@ function renderLocationOptions(selectedLocation = "") {
   locationSelect.innerHTML = `<option value="">自行輸入或空白</option>${locations
     .map((location) => `<option value="${escapeHtml(location)}">${escapeHtml(location)}</option>`)
     .join("")}`;
+  const filterOptions = `<option value="">全部</option>${locations
+    .map((location) => `<option value="${escapeHtml(location)}">${escapeHtml(location)}</option>`)
+    .join("")}`;
+  const chartLocationValue = chartLocationFilter.value;
+  const detailLocationValue = detailLocationFilter.value;
+  chartLocationFilter.innerHTML = filterOptions;
+  detailLocationFilter.innerHTML = filterOptions;
+  chartLocationFilter.value = locations.includes(chartLocationValue) ? chartLocationValue : "";
+  detailLocationFilter.value = locations.includes(detailLocationValue) ? detailLocationValue : "";
   if (selectedLocation && locations.includes(selectedLocation)) {
     locationSelect.value = selectedLocation;
     locationInput.value = selectedLocation;
@@ -184,7 +197,8 @@ async function loadChart() {
   }
   try {
     const rows = await requestJson(`/api/student-measurements?studentId=${encodeURIComponent(studentId)}`);
-    renderChart([...rows].sort((a, b) => new Date(a.measurementDate) - new Date(b.measurementDate)));
+    const filteredRows = filterByLocation(rows, chartLocationFilter.value);
+    renderChart([...filteredRows].sort((a, b) => new Date(a.measurementDate) - new Date(b.measurementDate)));
   } catch (error) {
     chart.innerHTML = `<div class="empty-state chart-empty">${escapeHtml(error.message)}</div>`;
   }
@@ -198,7 +212,8 @@ async function loadDetails() {
     return;
   }
   try {
-    detailRows = await requestJson(`/api/student-measurements?studentId=${encodeURIComponent(studentId)}`);
+    const rows = await requestJson(`/api/student-measurements?studentId=${encodeURIComponent(studentId)}`);
+    detailRows = filterByLocation(rows, detailLocationFilter.value);
     renderDetails();
   } catch (error) {
     tableBody.innerHTML = "";
@@ -206,6 +221,11 @@ async function loadDetails() {
     emptyMeasurements.textContent = error.message;
     measurementCount.textContent = "載入失敗";
   }
+}
+
+function filterByLocation(rows, location) {
+  if (!location) return rows;
+  return rows.filter((row) => row.location === location);
 }
 
 function renderChart(rows) {
@@ -250,7 +270,7 @@ function renderSingleChart(rows, key, color, label, unit) {
     <text class="chart-label" x="${padding.left - 10}" y="${y(tick) + 4}" text-anchor="end">${tick}</text>
   `).join("");
   const labels = chartRows.map((row, index) => `
-    <text class="chart-label" x="${x(index)}" y="${height - 18}" text-anchor="middle">${escapeHtml(formatShortDate(row.measurementDate))}</text>
+    <text class="chart-label" x="${x(index)}" y="${height - 18}" text-anchor="middle">${escapeHtml(formatChartDateLabel(row.measurementDate))}</text>
   `).join("");
   const series = renderSeries(chartRows, key, color, label, x, y);
 
@@ -393,6 +413,7 @@ function resetForm(options = {}) {
 function validateMeasurement(data) {
   if (!data.studentId) return { valid: false, message: "請選擇學生" };
   if (!data.measurementDate) return { valid: false, message: "請選擇日期" };
+  if (!parseDateParts(data.measurementDate)) return { valid: false, message: "量測日期年份請使用 4 碼西元年，例如 2026-06-30" };
   if (data.heightCm !== "" && Number(data.heightCm) < 0) return { valid: false, message: "身高不可小於 0" };
   if (data.weightKg !== "" && Number(data.weightKg) < 0) return { valid: false, message: "體重不可小於 0" };
   return { valid: true };
@@ -440,7 +461,8 @@ function estimatePercentile(student, metric, value, measurementDateValue) {
 function estimateAge(student, measurementDateValue) {
   const birthYear = Number(student.birthYear);
   if (Number.isInteger(birthYear) && birthYear > 1900) {
-    const measurementYear = new Date(`${measurementDateValue}T00:00:00`).getFullYear();
+    const measurementYear = getMeasurementYear(measurementDateValue);
+    if (!measurementYear) return null;
     return Math.min(18, Math.max(0, measurementYear - birthYear));
   }
   return estimateAgeFromGrade(student.grade);
@@ -480,17 +502,43 @@ function formatPercentile(value) {
 
 function formatDate(value) {
   if (!value) return "-";
-  return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(`${value}T00:00:00`));
+  const parts = parseDateParts(value);
+  if (!parts) return "-";
+  return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(parts.year, parts.month - 1, parts.day));
 }
 
 function toDateTime(value) {
-  return new Date(`${value}T00:00:00`).getTime();
+  const parts = parseDateParts(value);
+  if (!parts) return 0;
+  return new Date(parts.year, parts.month - 1, parts.day).getTime();
 }
 
-function formatShortDate(value) {
+function formatChartDateLabel(value) {
   if (!value) return "-";
-  const date = new Date(`${value}T00:00:00`);
-  return `${date.getMonth() + 1}/${date.getDate()}`;
+  const parts = parseDateParts(value);
+  if (!parts) return "-";
+  return parts.month === 1 ? String(parts.year) : `${parts.month}月`;
+}
+
+function getMeasurementYear(value) {
+  return parseDateParts(value)?.year || null;
+}
+
+function parseDateParts(value) {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (
+    year < 1900
+    || year > 2100
+    || date.getFullYear() !== year
+    || date.getMonth() !== month - 1
+    || date.getDate() !== day
+  ) return null;
+  return { year, month, day };
 }
 
 function formatNumber(value) {
