@@ -258,12 +258,12 @@ function renderChart(rows) {
   }
 
   chart.innerHTML = `
-    ${renderSingleChart(validRows, "heightCm", "height", "#0ea5e9", "身高", "cm")}
-    ${renderSingleChart(validRows, "weightKg", "weight", "#f97316", "體重", "kg")}
+    ${renderSingleChart(validRows, "heightCm", "height", "身高", "cm")}
+    ${renderSingleChart(validRows, "weightKg", "weight", "體重", "kg")}
   `;
 }
 
-function renderSingleChart(rows, key, metric, color, label, unit) {
+function renderSingleChart(rows, key, metric, label, unit) {
   const chartRows = rows.filter((row) => row[key] !== null && Number.isFinite(row[key]));
   if (!chartRows.length) {
     return `
@@ -280,6 +280,7 @@ function renderSingleChart(rows, key, metric, color, label, unit) {
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
   const student = getStudent(chartStudentId.value);
+  const lineColor = getGenderLineColor(student);
   const referenceValues = chartRows.flatMap((row) => getChartBandValues(student, metric, row.measurementDate));
   const values = [...chartRows.map((row) => row[key]), ...referenceValues];
   const minValue = Math.max(0, Math.floor(Math.min(...values) - 5));
@@ -295,13 +296,13 @@ function renderSingleChart(rows, key, metric, color, label, unit) {
   `).join("");
   const bands = renderReferenceBands(chartRows, metric, student, x, y, minValue, maxValue, padding.left, width - padding.right);
   const labels = chartRows.map((row, index) => renderChartDateLabels(row.measurementDate, x(index), height - 18, index)).join("");
-  const series = renderSeries(chartRows, key, color, label, x, y);
+  const series = renderSeries(chartRows, key, metric, student, lineColor, label, unit, x, y);
 
   return `
     <section class="split-chart">
       <div class="split-chart-title">
         <h3>${label}（${unit}）</h3>
-        <span class="chart-legend-item"><i style="background:${color}"></i>${label}</span>
+        <span class="chart-legend-item"><i style="background:${lineColor}"></i>${label}</span>
       </div>
     <div class="chart-scroll">
         <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${label}折線圖">
@@ -317,19 +318,24 @@ function renderSingleChart(rows, key, metric, color, label, unit) {
   `;
 }
 
-function renderSeries(rows, key, color, label, x, y) {
+function renderSeries(rows, key, metric, student, lineColor, label, unit, x, y) {
   const points = rows
     .map((row, index) => ({ row, index, value: row[key] }))
     .filter((point) => point.value !== null && Number.isFinite(point.value));
   if (!points.length) return "";
 
   const pointText = points.map((point) => `${x(point.index)},${y(point.value)}`).join(" ");
-  const dots = points.map((point) => `
-    <circle class="chart-point" cx="${x(point.index)}" cy="${y(point.value)}" r="4" style="fill:${color}">
-      <title>${label} ${formatDate(point.row.measurementDate)}：${point.value}</title>
+  const dots = points.map((point) => {
+    const percentile = estimatePercentile(student, metric, point.value, point.row.measurementDate);
+    const pointClass = getPercentileClass(metric, percentile);
+    const tooltip = `${label} ${formatNumber(point.value)}${unit}（${formatPercentile(percentile)}）\n${formatDate(point.row.measurementDate)}`;
+    return `
+    <circle class="chart-point ${pointClass}" cx="${x(point.index)}" cy="${y(point.value)}" r="4">
+      <title>${escapeHtml(tooltip)}</title>
     </circle>
-  `).join("");
-  return `<polyline class="chart-line" points="${pointText}" style="stroke:${color}"></polyline>${dots}`;
+  `;
+  }).join("");
+  return `<polyline class="chart-line" points="${pointText}" style="stroke:${lineColor}"></polyline>${dots}`;
 }
 
 function renderReferenceBands(rows, metric, student, x, y, minValue, maxValue, left, right) {
@@ -513,6 +519,12 @@ function getStudentName(studentId) {
 
 function getStudent(studentId) {
   return students.find((student) => student.id === studentId) || null;
+}
+
+function getGenderLineColor(student) {
+  if (student?.gender === "FEMALE") return "#f9a8d4";
+  if (student?.gender === "MALE") return "#93c5fd";
+  return "#a5b4fc";
 }
 
 function getChartBandValues(student, metric, measurementDateValue) {
@@ -721,6 +733,12 @@ function getChartSvgStyles() {
     .band-green{fill:#22c55e}
     .band-blue{fill:#3b82f6}
     .band-purple{fill:#8b5cf6}
+    .pr-red{fill:#dc2626}
+    .pr-orange{fill:#ea580c}
+    .pr-yellow{fill:#a16207}
+    .pr-green{fill:#16a34a}
+    .pr-blue{fill:#2563eb}
+    .pr-purple{fill:#7c3aed}
   `;
 }
 
