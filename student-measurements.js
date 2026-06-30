@@ -528,7 +528,7 @@ function renderSuggestedWeightUpper(rows) {
     detailSuggestion.textContent = "";
     return;
   }
-  detailSuggestion.innerHTML = `建議體重上限：<strong>${formatNumber(suggestedWeightUpper)} kg</strong>（依目前最新身高 ${formatNumber(latestHeight)} cm 計算）`;
+  detailSuggestion.innerHTML = `建議體重：<strong>${formatNumber(suggestedWeightUpper)} kg</strong>（依目前最新身高 ${formatNumber(latestHeight)} cm 計算）`;
 }
 
 function openEditMode(id) {
