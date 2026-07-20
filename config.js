@@ -4,6 +4,6 @@ window.SCORING_SYSTEM_CONFIG = {
   adminAccounts: [
     { label: "Gink", email: "gink1222@gmail.com" },
     { label: "Lelia", email: "viola4378@gmail.com" },
-    { label: "Grandma", email: "grandma@scoring-system.local" },
+    { label: "Grandma", email: "turnstone7512@gmail.com" },
   ],
 };
