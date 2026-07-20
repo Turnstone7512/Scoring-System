@@ -538,6 +538,12 @@ button:disabled {
   display: block;
 }
 
+.page-version {
+  color: #cbd5e1;
+  font-size: 12px;
+  text-align: right;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
