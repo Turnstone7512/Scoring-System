@@ -12,6 +12,7 @@ Static frontend for the scoring system. The frontend can be deployed to GitHub P
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| 20260720-0030 | 2026-07-20 | 更新 auth.js 版本參數，避免登入帳號下拉選單使用瀏覽器舊快取。 |
 | 20260720-0020 | 2026-07-20 | 新增管理員 profiles 設定 SQL，補齊 Grandma、Gink、Lelia 的 Admin 身分。 |
 | 20260720-0010 | 2026-07-20 | 新增 Grandma 管理員登入選項。 |
 | 20260701-0060 | 2026-07-01 | 調整身高體重頁面說明文字，移除依學生描述。 |
