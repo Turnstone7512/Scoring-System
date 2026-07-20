@@ -12,6 +12,8 @@ Static frontend for the scoring system. The frontend can be deployed to GitHub P
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| 20260720-0020 | 2026-07-20 | 新增管理員 profiles 設定 SQL，補齊 Grandma、Gink、Lelia 的 Admin 身分。 |
+| 20260720-0010 | 2026-07-20 | 新增 Grandma 管理員登入選項。 |
 | 20260701-0060 | 2026-07-01 | 調整身高體重頁面說明文字，移除依學生描述。 |
 | 20260701-0050 | 2026-07-01 | 身高體重頁面右下角新增淺灰色版本號顯示。 |
 | 20260701-0040 | 2026-07-01 | 修正 GitHub 上傳批次檔中文 commit 訊息解析問題，改以 Base64 摘要產生 commit message。 |
