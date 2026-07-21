@@ -310,7 +310,9 @@ function formatMeasurementPercentile(value, metric) {
 }
 
 function formatMeasurementDelta(value, snakeKey, camelKey) {
-  const currentNumber = Number(readValue(value, snakeKey, camelKey));
+  const currentRawValue = readValue(value, snakeKey, camelKey);
+  if (currentRawValue === "") return "-";
+  const currentNumber = Number(currentRawValue);
   if (!Number.isFinite(currentNumber)) return "-";
   const previous = findPreviousMeasurement(value, snakeKey, camelKey);
   if (!previous) return "-";
