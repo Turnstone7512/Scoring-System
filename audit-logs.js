@@ -324,13 +324,15 @@ function formatMeasurementDelta(value, snakeKey, camelKey) {
 function findPreviousMeasurement(value, snakeKey, camelKey) {
   const personKey = getMeasurementPersonKey(value);
   const currentTime = getMeasurementTime(value);
+  const lowerBoundTime = getThreeMonthsBeforeTime(value);
   const currentId = readValue(value, "id");
-  if (!personKey || !Number.isFinite(currentTime)) return null;
+  if (!personKey || !Number.isFinite(currentTime) || !Number.isFinite(lowerBoundTime)) return null;
   return measurementRows
     .filter((row) => {
+      const rowTime = getMeasurementTime(row);
       if (String(readValue(row, "id")) === String(currentId)) return false;
       if (getMeasurementPersonKey(row) !== personKey) return false;
-      if (getMeasurementTime(row) >= currentTime) return false;
+      if (rowTime >= currentTime || rowTime < lowerBoundTime) return false;
       const amount = Number(readValue(row, snakeKey, camelKey));
       return Number.isFinite(amount);
     })
@@ -346,6 +348,13 @@ function getMeasurementPersonKey(value) {
 
 function getMeasurementTime(value) {
   const date = new Date(readValue(value, "measurement_date", "measurementDate"));
+  return date.getTime();
+}
+
+function getThreeMonthsBeforeTime(value) {
+  const date = new Date(readValue(value, "measurement_date", "measurementDate"));
+  if (Number.isNaN(date.getTime())) return NaN;
+  date.setMonth(date.getMonth() - 3);
   return date.getTime();
 }
 
