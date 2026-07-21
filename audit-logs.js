@@ -316,7 +316,9 @@ function formatMeasurementDelta(value, snakeKey, camelKey) {
   if (!Number.isFinite(currentNumber)) return "-";
   const previous = findPreviousMeasurement(value, snakeKey, camelKey);
   if (!previous) return "-";
-  const previousNumber = Number(readValue(previous, snakeKey, camelKey));
+  const previousRawValue = readValue(previous, snakeKey, camelKey);
+  if (previousRawValue === "") return "-";
+  const previousNumber = Number(previousRawValue);
   if (!Number.isFinite(previousNumber)) return "-";
   const diff = currentNumber - previousNumber;
   if (diff === 0) return "0";
@@ -335,7 +337,9 @@ function findPreviousMeasurement(value, snakeKey, camelKey) {
       if (String(readValue(row, "id")) === String(currentId)) return false;
       if (getMeasurementPersonKey(row) !== personKey) return false;
       if (rowTime >= currentTime || rowTime < lowerBoundTime) return false;
-      const amount = Number(readValue(row, snakeKey, camelKey));
+      const rawAmount = readValue(row, snakeKey, camelKey);
+      if (rawAmount === "") return false;
+      const amount = Number(rawAmount);
       return Number.isFinite(amount);
     })
     .sort((a, b) => getMeasurementTime(b) - getMeasurementTime(a)
