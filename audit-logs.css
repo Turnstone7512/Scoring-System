@@ -118,8 +118,18 @@
   font-weight: 900;
 }
 
+.audit-change-table td.changed-before {
+  color: var(--danger);
+  font-weight: 900;
+}
+
+.audit-change-table td.changed-after {
+  color: #2563eb;
+  font-weight: 900;
+}
+
 .audit-change-table td.unchanged {
-  color: #374151;
+  color: #111827;
   font-weight: 400;
 }
 

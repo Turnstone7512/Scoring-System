@@ -201,11 +201,18 @@ function renderChangeRow(label, spec, value, oldValue, newValue) {
       ${spec.map((column) => {
         const oldDisplay = column.value(oldValue, oldValue, newValue, "修改前");
         const newDisplay = column.value(newValue, oldValue, newValue, "修改後");
-        const className = normalizeValue(oldDisplay) !== normalizeValue(newDisplay) ? "changed" : "unchanged";
+        const isChanged = normalizeValue(oldDisplay) !== normalizeValue(newDisplay);
+        const className = isChanged ? getChangeClass(label) : "unchanged";
         return `<td class="${className}">${escapeHtml(column.value(value, oldValue, newValue, label))}</td>`;
       }).join("")}
     </tr>
   `;
+}
+
+function getChangeClass(label) {
+  if (String(label).includes("前")) return "changed-before";
+  if (String(label).includes("後") || String(label).includes("新增")) return "changed-after";
+  return "changed";
 }
 
 function getTableSpec(tableName, log) {
