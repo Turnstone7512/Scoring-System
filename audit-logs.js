@@ -185,7 +185,7 @@ function renderAuditLogCard(log) {
 }
 
 function renderChangeRows(log, spec) {
-  if ((log.tableName === "ScoreTransaction" || log.tableName === "StudentMeasurement") && log.action === "CREATE") {
+  if (log.action === "CREATE") {
     return renderChangeRow("新增", spec, log.newValue, log.oldValue, log.newValue);
   }
   return `
