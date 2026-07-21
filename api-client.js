@@ -449,16 +449,42 @@
   }
 
   async function audit(tableName, recordId, action, oldValue, newValue) {
-    await api("/audit_logs", {
-      method: "POST",
-      body: JSON.stringify({
-        table_name: tableName,
-        record_id: recordId,
-        action,
-        old_value: oldValue,
-        new_value: newValue,
-      }),
-    });
+    const row = {
+      table_name: tableName,
+      record_id: recordId,
+      action,
+      old_value: oldValue,
+      new_value: newValue,
+    };
+    const actor = await getAuditActor();
+    const rowWithActor = actor ? { ...row, changed_by_id: actor.id, changed_by_account: actor.account } : row;
+    try {
+      await api("/audit_logs", {
+        method: "POST",
+        body: JSON.stringify(rowWithActor),
+      });
+    } catch (error) {
+      if (!actor || !String(error.message || "").includes("changed_by")) throw error;
+      await api("/audit_logs", {
+        method: "POST",
+        body: JSON.stringify(row),
+      });
+    }
+  }
+
+  async function getAuditActor() {
+    if (!authClient) return null;
+    const { data } = await authClient.auth.getUser();
+    const user = data?.user;
+    if (!user) return null;
+    let account = user.email || user.id;
+    try {
+      const [profile] = await api(`/profiles?select=display_name&id=eq.${encodeURIComponent(user.id)}&limit=1`);
+      account = profile?.display_name || account;
+    } catch {
+      // Keep audit logging available even if the display name cannot be loaded.
+    }
+    return { id: user.id, account };
   }
 
   async function auditOptional(tableName, recordId, action, oldValue, newValue) {
@@ -569,6 +595,8 @@
       action: row.action,
       oldValue: row.old_value,
       newValue: row.new_value,
+      changedById: row.changed_by_id,
+      changedByAccount: row.changed_by_account,
       createdAt: row.created_at,
     };
   }

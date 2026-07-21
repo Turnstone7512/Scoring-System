@@ -150,6 +150,8 @@ create table if not exists public.audit_logs (
   action text not null check (action in ('CREATE', 'UPDATE', 'DELETE')),
   old_value jsonb,
   new_value jsonb,
+  changed_by_id uuid references auth.users(id) on delete set null,
+  changed_by_account text,
   created_at timestamptz not null default now()
 );
 

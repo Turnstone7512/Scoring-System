@@ -12,6 +12,7 @@ Static frontend for the scoring system. The frontend can be deployed to GitHub P
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| 20260721-0020 | 2026-07-21 | 異動紀錄新增異動帳號欄位，並記錄新異動的登入帳號。 |
 | 20260721-0010 | 2026-07-21 | 調整異動紀錄身高體重與學生點數顯示格式。 |
 | 20260720-0070 | 2026-07-20 | 更新 Grandma 重新建立後的最新 Supabase Auth UID。 |
 | 20260720-0060 | 2026-07-20 | 更新 Grandma 管理員登入 email 與 Supabase Auth UID 對應。 |

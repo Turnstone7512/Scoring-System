@@ -148,7 +148,7 @@ function renderAuditLogs() {
 }
 
 function renderAuditLogCard(log) {
-  const spec = getTableSpec(log.tableName);
+  const spec = getTableSpec(log.tableName, log);
   return `
     <article class="audit-card">
       <div class="audit-card-header">
@@ -199,9 +199,12 @@ function renderChangeRow(label, spec, value, oldValue, newValue) {
   `;
 }
 
-function getTableSpec(tableName) {
+function getTableSpec(tableName, log) {
+  const withActor = (columns) => tableName === "StudentMeasurement"
+    ? columns
+    : [...columns, { label: "異動帳號", value: () => formatAuditActor(log) }];
   if (tableName === "Student") {
-    return [
+    return withActor([
       { label: "建立時間", value: (value) => formatDate(readValue(value, "created_at", "createdAt")) },
       { label: "姓名", value: (value) => readValue(value, "name") },
       { label: "性別", value: (value) => formatGender(readValue(value, "gender")) },
@@ -209,27 +212,27 @@ function getTableSpec(tableName) {
       { label: "目前點數", value: (value) => readValue(value, "current_score", "currentScore") },
       { label: "照片網址", value: (value) => readValue(value, "photo_url", "photoUrl") },
       { label: "是否有效", value: (value) => formatActive(value) },
-    ];
+    ]);
   }
   if (tableName === "ScoreItem") {
-    return [
+    return withActor([
       { label: "建立時間", value: (value) => formatDate(readValue(value, "created_at", "createdAt")) },
       { label: "適用學生", value: (value) => formatApplicableStudent(value) },
       { label: "項目", value: (value) => formatItemName(value) },
       { label: "點數", value: (value) => readValue(value, "score") },
       { label: "生效時間", value: (value) => formatDate(readValue(value, "updated_at", "updatedAt", "created_at", "createdAt")) },
       { label: "是否有效", value: (value) => formatActive(value) },
-    ];
+    ]);
   }
   if (tableName === "ScoreTransaction") {
-    return [
+    return withActor([
       { label: "狀態", value: (value) => formatTransactionStatus(value) },
       { label: "學生姓名", value: (value) => formatStudentName(value) },
       { label: "項目", value: (value) => formatTransactionItem(value) },
       { label: "異動點數", value: (value) => readValue(value, "score_change", "scoreChange") },
       { label: "結餘點數", value: (value) => readValue(value, "running_total_score", "runningTotalScore", "settlement_score", "settlementScore") },
       { label: "生效時間", value: (value) => formatDate(readValue(value, "transaction_date", "transactionDate")) },
-    ];
+    ]);
   }
   if (tableName === "StudentMeasurement") {
     return [
@@ -244,10 +247,14 @@ function getTableSpec(tableName) {
       { label: "量測地點", value: (value) => readValue(value, "location") },
     ];
   }
-  return [
+  return withActor([
     { label: "建立時間", value: (value) => formatDate(readValue(value, "created_at", "createdAt")) },
     { label: "內容", value: (value) => formatAuditSearchText(value) || "-" },
-  ];
+  ]);
+}
+
+function formatAuditActor(log) {
+  return log?.changedByAccount || log?.changedById || "-";
 }
 
 function formatApplicableStudent(value) {
