@@ -16,6 +16,7 @@ let auditLogs = [];
 let students = [];
 let studentNameById = new Map();
 let studentById = new Map();
+let measurementRows = [];
 let searchTerm = "";
 let currentPage = 1;
 const pageSize = 20;
@@ -62,7 +63,7 @@ init();
 
 async function init() {
   applyInitialQueryParams();
-  await loadStudents();
+  await Promise.all([loadStudents(), loadMeasurements()]);
   await loadAuditLogs();
 }
 
@@ -84,6 +85,14 @@ async function loadStudents() {
     students = [];
     studentNameById = new Map();
     studentById = new Map();
+  }
+}
+
+async function loadMeasurements() {
+  try {
+    measurementRows = await requestJson("/api/student-measurements");
+  } catch {
+    measurementRows = [];
   }
 }
 
@@ -176,7 +185,7 @@ function renderAuditLogCard(log) {
 }
 
 function renderChangeRows(log, spec) {
-  if (log.tableName === "ScoreTransaction" && log.action === "CREATE") {
+  if ((log.tableName === "ScoreTransaction" || log.tableName === "StudentMeasurement") && log.action === "CREATE") {
     return renderChangeRow("新增", spec, log.newValue, log.oldValue, log.newValue);
   }
   return `
@@ -240,10 +249,10 @@ function getTableSpec(tableName, log) {
       { label: "學生姓名", value: (value) => formatMeasurementPersonName(value) },
       { label: "身高", value: (value) => formatNumber(readValue(value, "height_cm", "heightCm")) },
       { label: "身高PR", value: (value) => formatMeasurementPercentile(value, "height") },
-      { label: "與前次差", value: (value, oldValue, newValue, label) => formatMeasurementDelta("height_cm", "heightCm", oldValue, newValue, label) },
+      { label: "與前次差", value: (value) => formatMeasurementDelta(value, "height_cm", "heightCm") },
       { label: "體重", value: (value) => formatNumber(readValue(value, "weight_kg", "weightKg")) },
       { label: "體重PR", value: (value) => formatMeasurementPercentile(value, "weight") },
-      { label: "與前次差", value: (value, oldValue, newValue, label) => formatMeasurementDelta("weight_kg", "weightKg", oldValue, newValue, label) },
+      { label: "與前次差", value: (value) => formatMeasurementDelta(value, "weight_kg", "weightKg") },
       { label: "量測地點", value: (value) => readValue(value, "location") },
     ];
   }
@@ -279,7 +288,7 @@ function formatMeasurementPersonName(value) {
 
 function formatTransactionStatus(value) {
   if (value === null || value === undefined) return "-";
-  if (isTruthy(readValue(value, "is_deleted", "isDeleted"))) return "刪除";
+  if (isTruthy(readValue(value, "is_deleted", "isDeleted"))) return "無效";
   return "有效";
 }
 
@@ -300,14 +309,44 @@ function formatMeasurementPercentile(value, metric) {
   return formatPercentile(percentile);
 }
 
-function formatMeasurementDelta(snakeKey, camelKey, oldValue, newValue, label) {
-  if (label === "修改前" || label === "新增") return "-";
-  const oldNumber = Number(readValue(oldValue, snakeKey, camelKey));
-  const newNumber = Number(readValue(newValue, snakeKey, camelKey));
-  if (!Number.isFinite(oldNumber) || !Number.isFinite(newNumber)) return "-";
-  const diff = newNumber - oldNumber;
+function formatMeasurementDelta(value, snakeKey, camelKey) {
+  const currentNumber = Number(readValue(value, snakeKey, camelKey));
+  if (!Number.isFinite(currentNumber)) return "-";
+  const previous = findPreviousMeasurement(value, snakeKey, camelKey);
+  if (!previous) return "-";
+  const previousNumber = Number(readValue(previous, snakeKey, camelKey));
+  if (!Number.isFinite(previousNumber)) return "-";
+  const diff = currentNumber - previousNumber;
   if (diff === 0) return "0";
   return `${diff > 0 ? "+" : ""}${formatNumber(diff)}`;
+}
+
+function findPreviousMeasurement(value, snakeKey, camelKey) {
+  const personKey = getMeasurementPersonKey(value);
+  const currentTime = getMeasurementTime(value);
+  const currentId = readValue(value, "id");
+  if (!personKey || !Number.isFinite(currentTime)) return null;
+  return measurementRows
+    .filter((row) => {
+      if (String(readValue(row, "id")) === String(currentId)) return false;
+      if (getMeasurementPersonKey(row) !== personKey) return false;
+      if (getMeasurementTime(row) >= currentTime) return false;
+      const amount = Number(readValue(row, snakeKey, camelKey));
+      return Number.isFinite(amount);
+    })
+    .sort((a, b) => getMeasurementTime(b) - getMeasurementTime(a)
+      || new Date(readValue(b, "created_at", "createdAt") || 0).getTime() - new Date(readValue(a, "created_at", "createdAt") || 0).getTime())[0] || null;
+}
+
+function getMeasurementPersonKey(value) {
+  const personType = readValue(value, "person_type", "personType") || "STUDENT";
+  const personKey = readValue(value, "person_key", "personKey", "student_id", "studentId");
+  return personKey ? `${personType}:${personKey}` : "";
+}
+
+function getMeasurementTime(value) {
+  const date = new Date(readValue(value, "measurement_date", "measurementDate"));
+  return date.getTime();
 }
 
 function getMeasurementPerson(value) {
