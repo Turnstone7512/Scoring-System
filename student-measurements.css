@@ -44,6 +44,11 @@
   margin-top: 14px;
 }
 
+.detail-toggle-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .measurement-form {
   display: grid;
   gap: 12px 14px;

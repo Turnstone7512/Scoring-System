@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>身高體重</title>
-    <link rel="stylesheet" href="styles.css?v=20260721-0100" />
-    <link rel="stylesheet" href="student-measurements.css?v=20260721-0100" />
+    <link rel="stylesheet" href="styles.css?v=20260807-0010" />
+    <link rel="stylesheet" href="student-measurements.css?v=20260807-0010" />
   </head>
   <body class="theme-measurements">
     <header class="app-header">
@@ -69,7 +69,7 @@
       <section class="measurements-panel">
         <div class="section-title">
           <div>
-            <h2>身高體重明細</h2>
+            <h2>年度身高體重成長幅度紀錄</h2>
             <p id="measurementCount" class="meta">載入中...</p>
           </div>
           <div class="filter-controls">
@@ -86,9 +86,11 @@
             </thead>
             <tbody id="measurementTableBody"></tbody>
           </table>
-          <div id="emptyMeasurements" class="empty-state hidden">目前沒有身高體重紀錄</div>
+          <div id="emptyMeasurements" class="empty-state hidden">目前尚無年度成長紀錄</div>
         </div>
       </section>
+
+
       <section class="measurements-panel">
         <div class="section-title">
           <div>
@@ -110,13 +112,35 @@
         </form>
         <div id="temporaryPrResult" class="temporary-pr-result empty-state">尚未計算</div>
       </section>
-      <div class="page-version">20260721-0100</div>
+      <div class="detail-toggle-actions">
+        <button id="toggleDetailList" class="secondary-button" type="button">顯示明細清單</button>
+      </div>
+
+      <section id="detailListPanel" class="measurements-panel hidden">
+        <div class="section-title">
+          <div>
+            <h2>身高體重明細</h2>
+            <p id="rawMeasurementCount" class="meta">載入中...</p>
+          </div>
+        </div>
+        <div class="table-wrap" aria-live="polite">
+          <table class="measurement-table">
+            <thead>
+              <tr id="rawMeasurementTableHead">
+              </tr>
+            </thead>
+            <tbody id="rawMeasurementTableBody"></tbody>
+          </table>
+          <div id="rawEmptyMeasurements" class="empty-state hidden">目前尚無身高體重紀錄</div>
+        </div>
+      </section>
+      <div class="page-version">20260807-0010</div>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=20260721-0100"></script>
-    <script src="api-client.js?v=20260721-0100"></script>
-    <script src="auth.js?v=20260721-0100"></script>
+    <script src="config.js?v=20260807-0010"></script>
+    <script src="api-client.js?v=20260807-0010"></script>
+    <script src="auth.js?v=20260807-0010"></script>
     <script src="ui-utils.js"></script>
-    <script src="student-measurements.js?v=20260721-0100"></script>
+    <script src="student-measurements.js?v=20260807-0010"></script>
   </body>
 </html>

@@ -25,6 +25,12 @@ const tableBody = document.querySelector("#measurementTableBody");
 const emptyMeasurements = document.querySelector("#emptyMeasurements");
 const measurementCount = document.querySelector("#measurementCount");
 const detailSuggestion = document.querySelector("#detailSuggestion");
+const toggleDetailList = document.querySelector("#toggleDetailList");
+const detailListPanel = document.querySelector("#detailListPanel");
+const rawMeasurementCount = document.querySelector("#rawMeasurementCount");
+const rawTableHead = document.querySelector("#rawMeasurementTableHead");
+const rawTableBody = document.querySelector("#rawMeasurementTableBody");
+const rawEmptyMeasurements = document.querySelector("#rawEmptyMeasurements");
 const temporaryPrForm = document.querySelector("#temporaryPrForm");
 const temporaryPrFields = {
   name: document.querySelector("#temporaryPrName"),
@@ -151,6 +157,11 @@ formStudentId.addEventListener("change", () => {
 chartLocationFilter.addEventListener("change", syncLocationFilters);
 detailLocationFilter.addEventListener("change", syncLocationFilters);
 downloadChartsButton.addEventListener("click", downloadChartImage);
+toggleDetailList?.addEventListener("click", () => {
+  const isHidden = detailListPanel.classList.toggle("hidden");
+  toggleDetailList.textContent = isHidden ? "顯示明細清單" : "隱藏明細清單";
+  renderRawDetails();
+});
 locationSelect.addEventListener("change", syncLocationInput);
 measurementForm.addEventListener("submit", saveMeasurement);
 cancelMeasurementEdit.addEventListener("click", resetForm);
@@ -260,7 +271,8 @@ function updateMeasurementMode() {
   const person = getPerson(detailStudentId.value || chartStudentId.value || formStudentId.value);
   const isAdminPerson = Boolean(person?.isAdminPerson);
   waistField.classList.toggle("hidden", !isAdminPerson);
-  renderTableHeader(isAdminPerson);
+  renderGrowthTableHeader();
+  renderRawTableHeader(isAdminPerson);
 }
 
 async function loadChart() {
@@ -305,7 +317,8 @@ function filterByLocation(rows, location) {
 function renderChart(rows) {
   const selectedPerson = getPerson(chartStudentId.value);
   const isAdminPerson = selectedPerson?.isAdminPerson;
-  const rowsWithBmi = addBmiValues(rows);
+  const annualRows = getAnnualMeasurementRows(rows, selectedPerson);
+  const rowsWithBmi = addBmiValues(annualRows);
   const validRows = rowsWithBmi.filter((row) => (
     isAdminPerson
       ? row.weightKg !== null || row.bmi !== null || row.waistCm !== null
@@ -336,7 +349,7 @@ function renderSingleChart(rows, key, metric, label, unit) {
     `;
   }
 
-  const width = Math.max(680, chartRows.length * 96);
+  const width = Math.max(680, chartRows.length * 120);
   const height = 300;
   const padding = { top: 24, right: 32, bottom: 46, left: 54 };
   const plotWidth = width - padding.left - padding.right;
@@ -348,7 +361,7 @@ function renderSingleChart(rows, key, metric, label, unit) {
   const minValue = Math.max(0, Math.floor(Math.min(...values) - 5));
   const maxValue = Math.ceil(Math.max(...values) + 5);
   const range = Math.max(1, maxValue - minValue);
-  const x = createTimeScale(chartRows, padding.left, plotWidth);
+  const x = createIndexScale(chartRows, padding.left, plotWidth);
   const y = (value) => padding.top + ((maxValue - value) / range) * plotHeight;
   const ticks = makeTicks(minValue, maxValue);
 
@@ -358,7 +371,7 @@ function renderSingleChart(rows, key, metric, label, unit) {
   `).join("");
   const bands = renderReferenceBands(chartRows, metric, student, x, y, minValue, maxValue, padding.left, width - padding.right);
   const boundaryLabels = renderAdminBoundaryLabels(metric, student, y, minValue, maxValue, width - padding.right + 8);
-  const labels = chartRows.map((row, index) => renderChartDateLabels(row.measurementDate, chartRows[index - 1]?.measurementDate, x(index), height - 18, index)).join("");
+  const labels = chartRows.map((row, index) => renderAnnualChartLabel(row, x(index), height - 18)).join("");
   const series = renderSeries(chartRows, key, metric, student, lineColor, label, unit, x, y);
 
   return `
@@ -463,15 +476,104 @@ function createTimeScale(rows, left, width) {
   };
 }
 
+function createIndexScale(rows, left, width) {
+  const lastIndex = rows.length - 1;
+  return (index) => {
+    if (lastIndex <= 0) return left + width / 2;
+    return left + (index / lastIndex) * width;
+  };
+}
+
+function getAnnualMeasurementRows(rows, person) {
+  const latestByPeriod = new Map();
+  rows
+    .filter((row) => row.measurementDate)
+    .forEach((row) => {
+      const period = getMeasurementPeriod(row.measurementDate, person);
+      if (!period) return;
+      const current = latestByPeriod.get(period.key);
+      if (!current || compareMeasurementRows(row, current.row) > 0) {
+        latestByPeriod.set(period.key, { ...period, row });
+      }
+    });
+  return [...latestByPeriod.values()]
+    .sort((a, b) => a.sort - b.sort)
+    .map((entry) => ({
+      ...entry.row,
+      annualKey: entry.key,
+      annualSort: entry.sort,
+      annualLabel: entry.label,
+      annualAge: entry.age,
+      annualYear: entry.year,
+    }));
+}
+
+function getMeasurementPeriod(measurementDateValue, person) {
+  const parts = parseDateParts(measurementDateValue);
+  if (!parts) return null;
+  if (!person?.isAdminPerson) {
+    const birthYear = Number(person?.birthYear);
+    if (Number.isInteger(birthYear) && birthYear > 1900) {
+      const birthday = getBirthdayParts(person);
+      const afterBirthday = parts.month > birthday.month
+        || (parts.month === birthday.month && parts.day >= birthday.day);
+      const age = Math.max(0, parts.year - birthYear - (afterBirthday ? 0 : 1));
+      const periodYear = birthYear + age;
+      return {
+        key: `age:${age}`,
+        sort: age,
+        year: periodYear,
+        age,
+        label: `${periodYear}（${age}歲）`,
+      };
+    }
+  }
+  return {
+    key: `year:${parts.year}`,
+    sort: parts.year,
+    year: parts.year,
+    age: null,
+    label: `${parts.year}`,
+  };
+}
+
+function getBirthdayParts(person) {
+  const month = Number(person?.birthMonth);
+  const day = Number(person?.birthDay);
+  return {
+    month: Number.isInteger(month) && month >= 1 && month <= 12 ? month : 1,
+    day: Number.isInteger(day) && day >= 1 && day <= 31 ? day : 1,
+  };
+}
+
+function compareMeasurementRows(a, b) {
+  const dateDiff = toDateTime(a.measurementDate) - toDateTime(b.measurementDate);
+  if (dateDiff !== 0) return dateDiff;
+  return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+}
+
 function renderDetails() {
   const person = getPerson(detailStudentId.value);
   const isAdminPerson = Boolean(person?.isAdminPerson);
-  renderTableHeader(isAdminPerson);
   const sortedRows = addBmiValues([...detailRows].sort((a, b) => new Date(b.measurementDate) - new Date(a.measurementDate)));
   renderSuggestedWeightUpper(detailRows);
-  measurementCount.textContent = `共 ${sortedRows.length} 筆紀錄`;
-  emptyMeasurements.classList.toggle("hidden", sortedRows.length > 0);
-  tableBody.innerHTML = sortedRows.map((row) => {
+  const annualRows = getAnnualGrowthRows(detailRows, person);
+  renderGrowthTableHeader();
+  measurementCount.textContent = `共 ${annualRows.length} 筆年度紀錄`;
+  emptyMeasurements.classList.toggle("hidden", annualRows.length > 0);
+  tableBody.innerHTML = annualRows.map(renderGrowthRow).join("");
+  renderRawDetails(sortedRows, isAdminPerson);
+}
+
+function renderRawDetails(rows = null, isAdminPerson = null) {
+  if (!rawTableHead || !rawTableBody || !rawEmptyMeasurements || !rawMeasurementCount) return;
+  const person = getPerson(detailStudentId.value);
+  const adminMode = isAdminPerson ?? Boolean(person?.isAdminPerson);
+  const sortedRows = rows || addBmiValues([...detailRows].sort((a, b) => new Date(b.measurementDate) - new Date(a.measurementDate)));
+  renderRawTableHeader(adminMode);
+  rawMeasurementCount.textContent = `共 ${sortedRows.length} 筆紀錄`;
+  rawEmptyMeasurements.classList.toggle("hidden", sortedRows.length > 0);
+  rawTableBody.innerHTML = sortedRows.map((row) => {
     const student = getMeasurementPerson(row);
     const heightPercentile = estimatePercentile(student, "height", row.heightCm, row.measurementDate);
     const weightPercentile = estimatePercentile(student, "weight", row.weightKg, row.measurementDate);
@@ -502,12 +604,12 @@ function renderDetails() {
       </tr>
     `;
   }).join("");
-  tableBody.querySelectorAll("[data-edit]").forEach((button) => {
+  rawTableBody.querySelectorAll("[data-edit]").forEach((button) => {
     button.addEventListener("click", () => openEditMode(button.dataset.edit));
   });
 }
 
-function renderTableHeader(isAdminPerson) {
+function renderRawTableHeader(isAdminPerson) {
   const metricHeaders = isAdminPerson
     ? ["身高（cm）", "體重（kg）", "BMI", "腰圍（cm）"]
     : ["身高（cm）", "身高 PR", "體重（kg）", "體重 PR"];
@@ -518,7 +620,87 @@ function renderTableHeader(isAdminPerson) {
     "量測地點",
     "備註",
   ].map((label) => `<th>${label}</th>`).join("");
-  tableHead.innerHTML = `${headers}<th class="admin-only">操作</th>`;
+  rawTableHead.innerHTML = `${headers}<th class="admin-only">操作</th>`;
+}
+
+function renderGrowthTableHeader() {
+  const headers = [
+    "年度（年齡）",
+    "身高成長（cm）",
+    "身高成長（%）",
+    "PR",
+    "體重成長（kg）",
+    "體重成長（%）",
+    "PR",
+  ].map((label) => `<th>${label}</th>`).join("");
+  tableHead.innerHTML = headers;
+}
+
+function renderGrowthRow(row) {
+  const heightClass = getGrowthClass("height", row.heightPercentile);
+  const weightClass = getGrowthClass("weight", row.weightPercentile);
+  return `
+    <tr>
+      <td>${escapeHtml(row.label)}</td>
+      <td class="metric-value ${heightClass}">${formatSignedNumber(row.heightGrowth)}</td>
+      <td class="metric-value ${heightClass}">${formatPercentGrowth(row.heightGrowthPercent)}</td>
+      <td class="pr-cell ${heightClass}">${formatPercentile(row.heightPercentile)}</td>
+      <td class="metric-value ${weightClass}">${formatSignedNumber(row.weightGrowth)}</td>
+      <td class="metric-value ${weightClass}">${formatPercentGrowth(row.weightGrowthPercent)}</td>
+      <td class="pr-cell ${weightClass}">${formatPercentile(row.weightPercentile)}</td>
+    </tr>
+  `;
+}
+
+function getAnnualGrowthRows(rows, person) {
+  const annualRows = getAnnualMeasurementRows(rows, person);
+  return annualRows
+    .map((row, index) => {
+      const previous = annualRows[index - 1] || null;
+      const heightPercentile = estimatePercentile(person, "height", row.heightCm, row.measurementDate);
+      const weightPercentile = estimatePercentile(person, "weight", row.weightKg, row.measurementDate);
+      return {
+        label: row.annualLabel || "-",
+        heightGrowth: calculateGrowth(row.heightCm, previous?.heightCm),
+        heightGrowthPercent: calculateGrowthPercent(row.heightCm, previous?.heightCm),
+        heightPercentile,
+        weightGrowth: calculateGrowth(row.weightKg, previous?.weightKg),
+        weightGrowthPercent: calculateGrowthPercent(row.weightKg, previous?.weightKg),
+        weightPercentile,
+        sort: row.annualSort,
+      };
+    })
+    .sort((a, b) => b.sort - a.sort);
+}
+
+function calculateGrowth(currentValue, previousValue) {
+  const current = Number(currentValue);
+  const previous = Number(previousValue);
+  if (!Number.isFinite(current) || !Number.isFinite(previous) || previous <= 0) return null;
+  return current - previous;
+}
+
+function calculateGrowthPercent(currentValue, previousValue) {
+  const growth = calculateGrowth(currentValue, previousValue);
+  const previous = Number(previousValue);
+  if (!Number.isFinite(growth) || !Number.isFinite(previous) || previous <= 0) return null;
+  return (growth / previous) * 100;
+}
+
+function getGrowthClass(metric, percentile) {
+  return Number.isFinite(percentile) ? getPercentileClass(metric, percentile) : "";
+}
+
+function formatSignedNumber(value) {
+  if (!Number.isFinite(value)) return "-";
+  if (value === 0) return "0";
+  return `${value > 0 ? "+" : ""}${formatNumber(value)}`;
+}
+
+function formatPercentGrowth(value) {
+  if (!Number.isFinite(value)) return "-";
+  if (value === 0) return "0%";
+  return `${value > 0 ? "+" : ""}${formatNumber(value)}%`;
 }
 
 function renderSuggestedWeightUpper(rows) {
@@ -811,9 +993,12 @@ function estimatePercentile(student, metric, value, measurementDateValue) {
 function estimateAge(student, measurementDateValue) {
   const birthYear = Number(student.birthYear);
   if (Number.isInteger(birthYear) && birthYear > 1900) {
-    const measurementYear = getMeasurementYear(measurementDateValue);
-    if (!measurementYear) return null;
-    return Math.min(18, Math.max(0, measurementYear - birthYear));
+    const parts = parseDateParts(measurementDateValue);
+    if (!parts) return null;
+    const birthday = getBirthdayParts(student);
+    const afterBirthday = parts.month > birthday.month
+      || (parts.month === birthday.month && parts.day >= birthday.day);
+    return Math.min(18, Math.max(0, parts.year - birthYear - (afterBirthday ? 0 : 1)));
   }
   return estimateAgeFromGrade(student.grade);
 }
@@ -1222,6 +1407,20 @@ function renderChartDateLabels(value, previousValue, x, monthY, index) {
     <text class="chart-label chart-year-label" x="${x}" y="${monthY - 16}" text-anchor="middle">${parts.year}</text>
     ${monthLabel}
   `;
+}
+
+function renderAnnualChartLabel(row, x, labelY) {
+  const label = row.annualLabel || String(getMeasurementYear(row.measurementDate) || "");
+  return `
+    <text class="chart-label chart-year-label" x="${x}" y="${labelY - 14}" text-anchor="middle">${escapeHtml(label)}</text>
+    <text class="chart-label chart-month-label" x="${x}" y="${labelY}" text-anchor="middle">${escapeHtml(formatShortDate(row.measurementDate))}</text>
+  `;
+}
+
+function formatShortDate(value) {
+  const parts = parseDateParts(value);
+  if (!parts) return "-";
+  return `${parts.month}/${parts.day}`;
 }
 
 function getMeasurementYear(value) {
