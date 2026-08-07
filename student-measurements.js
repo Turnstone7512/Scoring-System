@@ -625,7 +625,7 @@ function renderRawTableHeader(isAdminPerson) {
 
 function renderGrowthTableHeader() {
   const headers = [
-    "年度（年齡）",
+    "資料日期",
     "身高成長（cm）",
     "身高成長（%）",
     "PR",
@@ -641,7 +641,7 @@ function renderGrowthRow(row) {
   const weightClass = getGrowthClass("weight", row.weightPercentile);
   return `
     <tr>
-      <td>${escapeHtml(row.label)}</td>
+      <td>${formatDate(row.measurementDate)}</td>
       <td class="metric-value ${heightClass}">${formatSignedNumber(row.heightGrowth)}</td>
       <td class="metric-value ${heightClass}">${formatPercentGrowth(row.heightGrowthPercent)}</td>
       <td class="pr-cell ${heightClass}">${formatPercentile(row.heightPercentile)}</td>
@@ -660,7 +660,7 @@ function getAnnualGrowthRows(rows, person) {
       const heightPercentile = estimatePercentile(person, "height", row.heightCm, row.measurementDate);
       const weightPercentile = estimatePercentile(person, "weight", row.weightKg, row.measurementDate);
       return {
-        label: row.annualLabel || "-",
+        measurementDate: row.measurementDate,
         heightGrowth: calculateGrowth(row.heightCm, previous?.heightCm),
         heightGrowthPercent: calculateGrowthPercent(row.heightCm, previous?.heightCm),
         heightPercentile,

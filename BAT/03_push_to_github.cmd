@@ -3,8 +3,8 @@ setlocal EnableExtensions DisableDelayedExpansion
 chcp 65001 >nul
 
 set "REPO_DIR=E:\Programs\GitHub\Scoring-System"
-set "VERSION=20260807-0020"
-set "CHANGE_SUMMARY_B64=56e75YuV6Lqr6auY6auU6YeN5piO57Sw5riF5Zau5oyJ6YiV5L2N572u"
+set "VERSION=20260807-0030"
+set "CHANGE_SUMMARY_B64=5bm05bqm5oiQ6ZW36KGo5pS56aGv56S66LOH5paZ5pel5pyf"
 set "COMMIT_MSG_FILE=%TEMP%\scoring-system-commit-message.txt"
 
 cd /d "%REPO_DIR%"
