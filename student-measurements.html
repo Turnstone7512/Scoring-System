@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>身高體重</title>
-    <link rel="stylesheet" href="styles.css?v=20260807-0010" />
-    <link rel="stylesheet" href="student-measurements.css?v=20260807-0010" />
+    <link rel="stylesheet" href="styles.css?v=20260807-0020" />
+    <link rel="stylesheet" href="student-measurements.css?v=20260807-0020" />
   </head>
   <body class="theme-measurements">
     <header class="app-header">
@@ -91,27 +91,6 @@
       </section>
 
 
-      <section class="measurements-panel">
-        <div class="section-title">
-          <div>
-            <h2>臨時計算 PR 值</h2>
-            <p class="meta">僅儲存於此瀏覽器快取，不會寫入資料庫。</p>
-          </div>
-        </div>
-        <form id="temporaryPrForm" class="measurement-form temporary-pr-form">
-          <label>Name<input id="temporaryPrName" type="text" maxlength="80" /></label>
-          <label>出生年<input id="temporaryPrBirthYear" type="number" min="1900" max="2100" /></label>
-          <label>性別<select id="temporaryPrGender"><option value="">請選擇</option><option value="MALE">男</option><option value="FEMALE">女</option></select></label>
-          <label class="temporary-pr-height-field">身高（cm）<input id="temporaryPrHeight" type="number" min="0" max="300" step="0.1" /></label>
-          <label class="temporary-pr-weight-field">體重（kg）<input id="temporaryPrWeight" type="number" min="0" max="300" step="0.1" /></label>
-          <p id="temporaryPrError" class="error-text hidden"></p>
-          <div class="form-actions">
-            <button type="submit">計算</button>
-            <button id="clearTemporaryPr" class="secondary-button" type="button">清除</button>
-          </div>
-        </form>
-        <div id="temporaryPrResult" class="temporary-pr-result empty-state">尚未計算</div>
-      </section>
       <div class="detail-toggle-actions">
         <button id="toggleDetailList" class="secondary-button" type="button">顯示明細清單</button>
       </div>
@@ -134,13 +113,34 @@
           <div id="rawEmptyMeasurements" class="empty-state hidden">目前尚無身高體重紀錄</div>
         </div>
       </section>
-      <div class="page-version">20260807-0010</div>
+      <section class="measurements-panel">
+        <div class="section-title">
+          <div>
+            <h2>臨時計算 PR 值</h2>
+            <p class="meta">僅儲存於此瀏覽器快取，不會寫入資料庫。</p>
+          </div>
+        </div>
+        <form id="temporaryPrForm" class="measurement-form temporary-pr-form">
+          <label>Name<input id="temporaryPrName" type="text" maxlength="80" /></label>
+          <label>出生年<input id="temporaryPrBirthYear" type="number" min="1900" max="2100" /></label>
+          <label>性別<select id="temporaryPrGender"><option value="">請選擇</option><option value="MALE">男</option><option value="FEMALE">女</option></select></label>
+          <label class="temporary-pr-height-field">身高（cm）<input id="temporaryPrHeight" type="number" min="0" max="300" step="0.1" /></label>
+          <label class="temporary-pr-weight-field">體重（kg）<input id="temporaryPrWeight" type="number" min="0" max="300" step="0.1" /></label>
+          <p id="temporaryPrError" class="error-text hidden"></p>
+          <div class="form-actions">
+            <button type="submit">計算</button>
+            <button id="clearTemporaryPr" class="secondary-button" type="button">清除</button>
+          </div>
+        </form>
+        <div id="temporaryPrResult" class="temporary-pr-result empty-state">尚未計算</div>
+      </section>
+      <div class="page-version">20260807-0020</div>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=20260807-0010"></script>
-    <script src="api-client.js?v=20260807-0010"></script>
-    <script src="auth.js?v=20260807-0010"></script>
+    <script src="config.js?v=20260807-0020"></script>
+    <script src="api-client.js?v=20260807-0020"></script>
+    <script src="auth.js?v=20260807-0020"></script>
     <script src="ui-utils.js"></script>
-    <script src="student-measurements.js?v=20260807-0010"></script>
+    <script src="student-measurements.js?v=20260807-0020"></script>
   </body>
 </html>
