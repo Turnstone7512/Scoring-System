@@ -641,7 +641,7 @@ function renderGrowthRow(row) {
   const weightClass = getGrowthClass("weight", row.weightPercentile);
   return `
     <tr>
-      <td>${formatDate(row.measurementDate)}</td>
+      <td>${formatGrowthDate(row.measurementDate, row.annualAge)}</td>
       <td class="metric-value ${heightClass}">${formatSignedNumber(row.heightGrowth)}</td>
       <td class="metric-value ${heightClass}">${formatPercentGrowth(row.heightGrowthPercent)}</td>
       <td class="pr-cell ${heightClass}">${formatPercentile(row.heightPercentile)}</td>
@@ -661,6 +661,7 @@ function getAnnualGrowthRows(rows, person) {
       const weightPercentile = estimatePercentile(person, "weight", row.weightKg, row.measurementDate);
       return {
         measurementDate: row.measurementDate,
+        annualAge: row.annualAge,
         heightGrowth: calculateGrowth(row.heightCm, previous?.heightCm),
         heightGrowthPercent: calculateGrowthPercent(row.heightCm, previous?.heightCm),
         heightPercentile,
@@ -1278,6 +1279,13 @@ function formatDate(value) {
   const parts = parseDateParts(value);
   if (!parts) return "-";
   return new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(parts.year, parts.month - 1, parts.day));
+}
+
+function formatGrowthDate(value, age) {
+  const parts = parseDateParts(value);
+  if (!parts) return "-";
+  const dateText = `${parts.year}/${parts.month}/${parts.day}`;
+  return Number.isFinite(age) ? `${dateText} (${age}歲)` : dateText;
 }
 
 async function downloadChartImage() {
