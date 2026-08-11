@@ -373,6 +373,7 @@ function renderSingleChart(rows, key, metric, label, unit) {
   const boundaryLabels = renderAdminBoundaryLabels(metric, student, y, minValue, maxValue, width - padding.right + 8);
   const labels = chartRows.map((row, index) => renderAnnualChartLabel(row, x(index), height - 18)).join("");
   const series = renderSeries(chartRows, key, metric, student, lineColor, label, unit, x, y);
+  const percentileLegend = renderPercentileLegend(metric, student);
 
   return `
     <section class="split-chart">
@@ -391,6 +392,7 @@ function renderSingleChart(rows, key, metric, label, unit) {
           ${series}
       </svg>
     </div>
+    ${percentileLegend}
     </section>
   `;
 }
@@ -425,6 +427,37 @@ function getChartMarker(person, metric, percentile, bmi, value) {
   if (metric === "weight" || metric === "bmi") return formatBmi(bmi);
   if (metric === "waist") return getWaistClassLabel(person, value);
   return "-";
+}
+
+function renderPercentileLegend(metric, student) {
+  if (student?.isAdminPerson || !["height", "weight"].includes(metric)) return "";
+  const items = metric === "height"
+    ? [
+        ["pr-red", "PR1 以下"],
+        ["pr-orange", "PR1 ~ PR3"],
+        ["pr-yellow", "PR3 ~ PR25"],
+        ["pr-green", "PR25 ~ PR75"],
+        ["pr-blue", "PR75 ~ PR97"],
+        ["pr-purple", "PR97 以上"],
+      ]
+    : [
+        ["pr-red", "PR1 以下"],
+        ["pr-orange", "PR1 ~ PR3"],
+        ["pr-yellow", "PR3 ~ PR25"],
+        ["pr-green", "PR25 ~ PR75"],
+        ["pr-yellow", "PR75 ~ PR97"],
+        ["pr-orange", "PR97 ~ PR99"],
+        ["pr-red", "PR99 以上"],
+      ];
+  return `
+    <div class="percentile-legend" aria-label="${metric === "height" ? "身高" : "體重"} PR 色彩區間">
+      ${items.map(([className, text]) => `
+        <span class="percentile-legend-item ${className}">
+          <i></i>${text}
+        </span>
+      `).join("")}
+    </div>
+  `;
 }
 
 function renderReferenceBands(rows, metric, student, x, y, minValue, maxValue, left, right) {

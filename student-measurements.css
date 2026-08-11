@@ -245,6 +245,54 @@
   width: 10px;
 }
 
+.percentile-legend {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12px;
+  gap: 8px 12px;
+  margin-top: 10px;
+}
+
+.percentile-legend-item {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.percentile-legend-item i {
+  border-radius: 3px;
+  display: inline-block;
+  height: 10px;
+  width: 18px;
+}
+
+.percentile-legend-item.pr-red i {
+  background: #ef4444;
+}
+
+.percentile-legend-item.pr-orange i {
+  background: #f97316;
+}
+
+.percentile-legend-item.pr-yellow i {
+  background: #eab308;
+}
+
+.percentile-legend-item.pr-green i {
+  background: #22c55e;
+}
+
+.percentile-legend-item.pr-blue i {
+  background: #3b82f6;
+}
+
+.percentile-legend-item.pr-purple i {
+  background: #8b5cf6;
+}
+
 .table-wrap {
   border: 1px solid var(--line);
   border-radius: 8px;
