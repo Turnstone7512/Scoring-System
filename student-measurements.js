@@ -17,6 +17,7 @@ const weightKg = document.querySelector("#weightKg");
 const waistCm = document.querySelector("#waistCm");
 const note = document.querySelector("#note");
 const cancelMeasurementEdit = document.querySelector("#cancelMeasurementEdit");
+const deleteMeasurementButton = document.querySelector("#deleteMeasurement");
 const formError = document.querySelector("#measurementFormError");
 const chart = document.querySelector("#measurementChart");
 const downloadChartsButton = document.querySelector("#downloadCharts");
@@ -165,6 +166,7 @@ toggleDetailList?.addEventListener("click", () => {
 locationSelect.addEventListener("change", syncLocationInput);
 measurementForm.addEventListener("submit", saveMeasurement);
 cancelMeasurementEdit.addEventListener("click", resetForm);
+deleteMeasurementButton?.addEventListener("click", deleteMeasurement);
 temporaryPrForm.addEventListener("submit", calculateTemporaryPr);
 clearTemporaryPr.addEventListener("click", clearTemporaryPrCache);
 
@@ -763,6 +765,7 @@ function openEditMode(id) {
   renderLocationOptions(row.location || "");
   measurementFormTitle.textContent = "編輯身高體重";
   cancelMeasurementEdit.classList.remove("hidden");
+  deleteMeasurementButton?.classList.remove("hidden");
   measurementForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -806,6 +809,31 @@ async function saveMeasurement(event) {
   }
 }
 
+async function deleteMeasurement() {
+  const id = measurementId.value;
+  if (!id) return;
+  const row = detailRows.find((entry) => entry.id === id);
+  const label = row
+    ? `${formatDate(row.measurementDate)} ${getMeasurementPerson(row)?.name || ""}`.trim()
+    : "這筆身高體重資料";
+  if (!window.confirm(`確定要刪除 ${label} 嗎？`)) return;
+
+  AppUI.showLoading("刪除身高體重資料...");
+  try {
+    await requestJson(`/api/student-measurements/${encodeURIComponent(id)}`, { method: "DELETE" });
+    AppUI.toast("身高體重資料已刪除");
+    const personId = formStudentId.value || detailStudentId.value;
+    resetForm({ keepStudentId: personId });
+    await loadLocationOptions();
+    await Promise.all([loadChart(), loadDetails()]);
+  } catch (error) {
+    showFormError(error.message);
+    AppUI.toast(error.message, "error");
+  } finally {
+    AppUI.hideLoading();
+  }
+}
+
 function resetForm(options = {}) {
   measurementId.value = "";
   measurementDate.value = todayInputValue();
@@ -818,6 +846,7 @@ function resetForm(options = {}) {
   renderLocationOptions("");
   measurementFormTitle.textContent = "新增身高體重";
   cancelMeasurementEdit.classList.add("hidden");
+  deleteMeasurementButton?.classList.add("hidden");
   hideFormError();
 }
 
