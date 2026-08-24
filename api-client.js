@@ -44,7 +44,7 @@
     match = path.match(/^\/student-measurements\/([^/]+)$/);
     if (match && method === "PUT") return updateStudentMeasurement(match[1], body);
     if (match && method === "PATCH") return updateStudentMeasurement(match[1], body);
-    if (match && method === "DELETE") return softDelete("student_measurements", "StudentMeasurement", match[1]);
+    if (match && method === "DELETE") return deleteStudentMeasurement(match[1]);
 
     if (path === "/score-items" && method === "GET") return listScoreItems(params.get("type"));
     if (path === "/score-items" && method === "POST") return createScoreItem(body);
@@ -339,6 +339,13 @@
     const existing = await getRow("score_transactions", id);
     await rpc("admin_delete_score_transaction", { p_id: id });
     await audit("ScoreTransaction", id, "DELETE", existing, { ...existing, is_deleted: true });
+    return { id };
+  }
+
+  async function deleteStudentMeasurement(id) {
+    const existing = await getRow("student_measurements", id);
+    await rpc("admin_delete_student_measurement", { p_id: id });
+    await audit("StudentMeasurement", id, "DELETE", existing, { ...existing, is_deleted: true });
     return { id };
   }
 
